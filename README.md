@@ -3,6 +3,10 @@
 This is a multimap implementation for Rust. Implemented as a thin wrapper around
 std::collections::HashMap.
 
+[Documentation](http://havarnov.github.io/multimap)
+
+## Example
+
 ````rust
 extern crate multimap;
 
