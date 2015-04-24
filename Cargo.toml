@@ -1,0 +1,8 @@
+[package]
+name = "multimap"
+version = "0.1.0"
+description = "A multimap implementation."
+readme = "README.md"
+repository = "https://github.com/havarnov/multimap"
+license = "MIT"
+authors = ["Håvar Nøvik <havar.novik@gmail.com>"]
