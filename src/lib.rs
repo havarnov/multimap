@@ -68,7 +68,7 @@ pub struct MultiMap<K, V> {
     inner: HashMap<K, Vec<V>>,
 }
 
-impl<K, V> MultiMap<K, V> where K: Eq + Hash, V: Eq {
+impl<K, V> MultiMap<K, V> where K: Eq + Hash {
 
     /// Creates an empty MultiMap
     ///
