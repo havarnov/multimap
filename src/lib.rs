@@ -83,6 +83,19 @@ impl<K, V> MultiMap<K, V> where K: Eq + Hash, V: Eq {
         MultiMap { inner: HashMap::new() }
     }
 
+    /// Creates an empty multimap with the given initial capacity.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multimap::MultiMap;
+    ///
+    /// let mut map: MultiMap<&str, isize> = MultiMap::with_capacity(20);
+    /// ```
+    pub fn with_capacity(capacity: usize) -> MultiMap<K,V> {
+        MultiMap { inner: HashMap::with_capacity(capacity) }
+    }
+
     /// Inserts a key-value pair into the multimap. If the key does exists in
     /// the map then the key is pushed to that key's vector. If the key doesn't
     /// exists in the map a new vector with the given value is inserted.
@@ -498,6 +511,11 @@ fn new() {
 }
 
 #[test]
+fn with_capacity() {
+    let _: MultiMap<usize, usize> = MultiMap::with_capacity(20);
+}
+
+#[test]
 fn insert() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
     m.insert(1,3);
@@ -591,8 +609,8 @@ fn get_vec_present() {
 
 #[test]
 fn capacity() {
-    let m: MultiMap<usize, usize> = MultiMap::new();
-    assert_eq!(m.capacity(), 0);
+    let m: MultiMap<usize, usize> = MultiMap::with_capacity(20);
+    assert!(m.capacity() >= 20);
 }
 
 #[test]
