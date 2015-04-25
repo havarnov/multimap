@@ -35,13 +35,13 @@ pub use std::collections::hash_map::IterMut as IterAllMut;
 ///
 /// // check if there's any urls.
 /// println!("Are there any urls in the multimap? {:?}.",
-///     if queries.contains_key(&("urls")) {"Yes"} else {"No"} );
+///     if queries.contains_key("urls") {"Yes"} else {"No"} );
 ///
 /// // get the first item in a key's vector.
-/// assert_eq!(queries.get(&("urls")), Some(&("http://rust-lang.org")));
+/// assert_eq!(queries.get("urls"), Some(&"http://rust-lang.org"));
 ///
 /// // get all the urls.
-/// assert_eq!(queries.get_vec(&("urls")),
+/// assert_eq!(queries.get_vec("urls"),
 ///     Some(&vec!["http://rust-lang.org", "http://mozilla.org", "http://wikipedia.org"]));
 ///
 /// // iterate over all keys and the first value in the key's vector.
@@ -60,9 +60,9 @@ pub use std::collections::hash_map::IterMut as IterAllMut;
 /// map.insert("key1", 42);
 /// map.insert("key1", 1337);
 ///
-/// assert_eq!(map[&("key1")], 42);
-/// assert_eq!(map.get(&("key1")), Some(&42));
-/// assert_eq!(map.get_vec(&("key1")), Some(&vec![42, 1337]));
+/// assert_eq!(map["key1"], 42);
+/// assert_eq!(map.get("key1"), Some(&42));
+/// assert_eq!(map.get_vec("key1"), Some(&vec![42, 1337]));
 /// ```
 pub struct MultiMap<K, V> {
     inner: HashMap<K, Vec<V>>,
