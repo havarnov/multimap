@@ -1,3 +1,6 @@
+[![Travis Build Status](https://travis-ci.org/havarnov/multimap.svg?branch=master)](https://travis-ci.org/havarnov/multimap)
+[![crates.io](http://meritbadge.herokuapp.com/multimap)](https://crates.io/crates/multimap)
+
 # Multimap implementation for Rust
 
 This is a multimap implementation for Rust. Implemented as a thin wrapper around
