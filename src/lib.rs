@@ -1,6 +1,7 @@
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::hash_map::Keys;
+use std::fmt::{self, Debug};
 use std::iter::Iterator;
 use std::hash::Hash;
 use std::ops::Index;
@@ -463,6 +464,12 @@ impl<'a, K, V, Q: ?Sized> Index<&'a Q> for MultiMap<K, V>
     }
 }
 
+impl<K, V> Debug for MultiMap<K, V> where K: Eq + Hash + Debug, V: Debug {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_map().entries(self.iter_all()).finish()
+    }
+}
+
 #[derive(Clone)]
 pub struct Iter<'a, K: 'a, V: 'a> {
     inner: IterAll<'a,K, Vec<V>>,
@@ -687,3 +694,19 @@ fn iter() {
     assert_eq!(iter.len(), 1);
 }
 
+#[test]
+fn test_fmt_debug() {
+    let mut map = MultiMap::new();
+    let empty: MultiMap<i32, i32> = MultiMap::new();
+
+    map.insert(1, 2);
+    map.insert(1, 5);
+    map.insert(1, -1);
+    map.insert(3, 4);
+
+    let map_str = format!("{:?}", map);
+
+    assert!(map_str == "{1: [2, 5, -1], 3: [4]}" ||
+            map_str == "{3: [4], 1: [2, 5, -1]}");
+    assert_eq!(format!("{:?}", empty), "{}");
+}
