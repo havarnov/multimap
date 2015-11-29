@@ -470,6 +470,18 @@ impl<K, V> Debug for MultiMap<K, V> where K: Eq + Hash + Debug, V: Debug {
     }
 }
 
+impl<K, V> PartialEq for MultiMap<K, V> where K: Eq + Hash, V: PartialEq {
+    fn eq(&self, other: &MultiMap<K, V>) -> bool {
+        if self.len() != other.len() { return false; }
+
+        self.iter_all().all(|(key, value)|
+            other.get_vec(key).map_or(false, |v| *value == *v)
+        )
+    }
+}
+
+impl<K, V> Eq for MultiMap<K, V> where K: Eq + Hash, V: Eq {}
+
 #[derive(Clone)]
 pub struct Iter<'a, K: 'a, V: 'a> {
     inner: IterAll<'a,K, Vec<V>>,
@@ -709,4 +721,22 @@ fn test_fmt_debug() {
     assert!(map_str == "{1: [2, 5, -1], 3: [4]}" ||
             map_str == "{3: [4], 1: [2, 5, -1]}");
     assert_eq!(format!("{:?}", empty), "{}");
+}
+
+#[test]
+fn test_eq() {
+    let mut m1 = MultiMap::new();
+    m1.insert(1, 2);
+    m1.insert(2, 3);
+    m1.insert(3, 4);
+    let mut m2 = MultiMap::new();
+    m2.insert(1, 2);
+    m2.insert(2, 3);
+    assert!(m1 != m2);
+    m2.insert(3, 4);
+    assert_eq!(m1, m2);
+    m2.insert(3, 4);
+    assert!(m1 != m2);
+    m1.insert(3, 4);
+    assert_eq!(m1, m2);
 }
