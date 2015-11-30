@@ -2,7 +2,7 @@ use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::hash_map::Keys;
 use std::fmt::{self, Debug};
-use std::iter::Iterator;
+use std::iter::{Iterator, IntoIterator};
 use std::hash::Hash;
 use std::ops::Index;
 
@@ -480,6 +480,17 @@ impl<K, V> PartialEq for MultiMap<K, V> where K: Eq + Hash, V: PartialEq {
 
 impl<K, V> Eq for MultiMap<K, V> where K: Eq + Hash, V: Eq {}
 
+impl<'a, K, V> IntoIterator for &'a MultiMap<K, V>
+    where K: Eq + Hash
+{
+    type Item = (&'a K, &'a V);
+    type IntoIter = Iter<'a, K, V>;
+    
+    fn into_iter(self) -> Iter<'a, K, V> {
+        self.iter()
+    }
+}
+
 #[derive(Clone)]
 pub struct Iter<'a, K: 'a, V: 'a> {
     inner: IterAll<'a,K, Vec<V>>,
@@ -702,6 +713,22 @@ fn iter() {
     for _ in iter.by_ref().take(2) {}
 
     assert_eq!(iter.len(), 1);
+}
+
+#[test]
+fn intoiterator_for_reference_type() {
+    let mut m: MultiMap<usize, usize> = MultiMap::new();
+    m.insert(1,42);
+    m.insert(1,43);
+    m.insert(4,42);
+    m.insert(8,42);
+    
+    let keys = vec![1,4,8];
+    
+    for (key, value) in &m {
+        assert!(keys.contains(key));
+        assert_eq!(value, &42)
+    }
 }
 
 #[test]
