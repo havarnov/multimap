@@ -115,9 +115,7 @@ impl<K, V> MultiMap<K, V> where K: Eq + Hash {
             values.push(v);
         }
         else {
-            let mut values = Vec::new();
-            values.push(v);
-            self.inner.insert(k,values);
+            self.inner.insert(k, vec![v]);
         }
     }
 
