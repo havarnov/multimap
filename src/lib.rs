@@ -1,3 +1,60 @@
+//! A MultiMap implementation which is just a wrapper around std::collections::HashMap.
+//! See HashMap's documentation for more details.
+//!
+//! Some of the methods are just thin wrappers, some methods does change a little semantics
+//! and some methods are new (doesn't have an equivalent in HashMap.)
+//!
+//! The MultiMap is generic for the key (K) and the value (V). Internally the values are
+//! stored in a generic Vector.
+//!
+//! # Examples
+//!
+//! ```
+//! use multimap::MultiMap;
+//!
+//! // create a new MultiMap. An explicit type signature can be omitted because of the
+//! // type inference.
+//! let mut queries = MultiMap::new();
+//!
+//! // insert some queries.
+//! queries.insert("urls", "http://rust-lang.org");
+//! queries.insert("urls", "http://mozilla.org");
+//! queries.insert("urls", "http://wikipedia.org");
+//! queries.insert("id", "42");
+//! queries.insert("name", "roger");
+//!
+//! // check if there's any urls.
+//! println!("Are there any urls in the multimap? {:?}.",
+//!     if queries.contains_key("urls") {"Yes"} else {"No"} );
+//!
+//! // get the first item in a key's vector.
+//! assert_eq!(queries.get("urls"), Some(&"http://rust-lang.org"));
+//!
+//! // get all the urls.
+//! assert_eq!(queries.get_vec("urls"),
+//!     Some(&vec!["http://rust-lang.org", "http://mozilla.org", "http://wikipedia.org"]));
+//!
+//! // iterate over all keys and the first value in the key's vector.
+//! for (key, value) in queries.iter() {
+//!     println!("key: {:?}, val: {:?}", key, value);
+//! }
+//!
+//! // iterate over all keys and the key's vector.
+//! for (key, values) in queries.iter_all() {
+//!     println!("key: {:?}, values: {:?}", key, values);
+//! }
+//!
+//! // the different methods for getting value(s) from the multimap.
+//! let mut map = MultiMap::new();
+//!
+//! map.insert("key1", 42);
+//! map.insert("key1", 1337);
+//!
+//! assert_eq!(map["key1"], 42);
+//! assert_eq!(map.get("key1"), Some(&42));
+//! assert_eq!(map.get_vec("key1"), Some(&vec![42, 1337]));
+//! ```
+
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::hash_map::Keys;
@@ -9,62 +66,6 @@ use std::ops::Index;
 pub use std::collections::hash_map::Iter as IterAll;
 pub use std::collections::hash_map::IterMut as IterAllMut;
 
-/// A MultiMap implementation which is just a wrapper around std::collections::HashMap.
-/// See HashMap's documentation for more details.
-///
-/// Some of the methods are just thin wrappers, some methods does change a little semantics
-/// and some methods are new (doesn't have an equivalent in HashMap.)
-///
-/// The MultiMap is generic for the key (K) and the value (V). Internally the values are
-/// stored in a generic Vector.
-///
-/// # Examples
-///
-/// ```
-/// use multimap::MultiMap;
-///
-/// // create a new MultiMap. An explicit type signature can be omitted because of the
-/// // type inference.
-/// let mut queries = MultiMap::new();
-///
-/// // insert some queries.
-/// queries.insert("urls", "http://rust-lang.org");
-/// queries.insert("urls", "http://mozilla.org");
-/// queries.insert("urls", "http://wikipedia.org");
-/// queries.insert("id", "42");
-/// queries.insert("name", "roger");
-///
-/// // check if there's any urls.
-/// println!("Are there any urls in the multimap? {:?}.",
-///     if queries.contains_key("urls") {"Yes"} else {"No"} );
-///
-/// // get the first item in a key's vector.
-/// assert_eq!(queries.get("urls"), Some(&"http://rust-lang.org"));
-///
-/// // get all the urls.
-/// assert_eq!(queries.get_vec("urls"),
-///     Some(&vec!["http://rust-lang.org", "http://mozilla.org", "http://wikipedia.org"]));
-///
-/// // iterate over all keys and the first value in the key's vector.
-/// for (key, value) in queries.iter() {
-///     println!("key: {:?}, val: {:?}", key, value);
-/// }
-///
-/// // iterate over all keys and the key's vector.
-/// for (key, values) in queries.iter_all() {
-///     println!("key: {:?}, values: {:?}", key, values);
-/// }
-///
-/// // the different methods for getting value(s) from the multimap.
-/// let mut map = MultiMap::new();
-///
-/// map.insert("key1", 42);
-/// map.insert("key1", 1337);
-///
-/// assert_eq!(map["key1"], 42);
-/// assert_eq!(map.get("key1"), Some(&42));
-/// assert_eq!(map.get_vec("key1"), Some(&vec![42, 1337]));
-/// ```
 pub struct MultiMap<K, V> {
     inner: HashMap<K, Vec<V>>,
 }
