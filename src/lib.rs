@@ -482,6 +482,14 @@ impl<K, V> PartialEq for MultiMap<K, V> where K: Eq + Hash, V: PartialEq {
 
 impl<K, V> Eq for MultiMap<K, V> where K: Eq + Hash, V: Eq {}
 
+impl<K, V> Default for MultiMap<K, V> where K: Eq + Hash {
+    fn default() -> MultiMap<K, V> {
+        MultiMap {
+            inner: Default::default()
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct Iter<'a, K: 'a, V: 'a> {
     inner: IterAll<'a,K, Vec<V>>,
@@ -739,4 +747,9 @@ fn test_eq() {
     assert!(m1 != m2);
     m1.insert(3, 4);
     assert_eq!(m1, m2);
+}
+
+#[test]
+fn test_default() {
+    let _: MultiMap<u8, u8> = Default::default();
 }
