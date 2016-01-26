@@ -66,6 +66,7 @@ use std::ops::Index;
 pub use std::collections::hash_map::Iter as IterAll;
 pub use std::collections::hash_map::IterMut as IterAllMut;
 
+#[derive(Clone)]
 pub struct MultiMap<K, V> {
     inner: HashMap<K, Vec<V>>,
 }
