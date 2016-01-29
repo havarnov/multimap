@@ -59,7 +59,7 @@ use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::hash_map::Keys;
 use std::fmt::{self, Debug};
-use std::iter::Iterator;
+use std::iter::{FromIterator, Iterator};
 use std::hash::Hash;
 use std::ops::Index;
 
@@ -490,6 +490,20 @@ impl<K, V> Default for MultiMap<K, V> where K: Eq + Hash {
     }
 }
 
+impl<K, V> FromIterator<(K, V)> for MultiMap<K, V> where K: Eq + Hash {
+    fn from_iter<T: IntoIterator<Item=(K, V)>>(iterable: T) -> MultiMap<K, V> {
+        let iter = iterable.into_iter();
+        let hint = iter.size_hint().0;
+
+        let mut multimap = MultiMap::with_capacity(hint);
+        for (k, v) in iter {
+            multimap.insert(k, v);
+        }
+
+        multimap
+    }
+}
+
 #[derive(Clone)]
 pub struct Iter<'a, K: 'a, V: 'a> {
     inner: IterAll<'a,K, Vec<V>>,
@@ -752,4 +766,17 @@ fn test_eq() {
 #[test]
 fn test_default() {
     let _: MultiMap<u8, u8> = Default::default();
+}
+
+#[test]
+fn test_from_iterator() {
+    let vals: Vec<(&str, i64)> = vec![("foo", 123), ("bar", 456), ("foo", 789)];
+    let multimap: MultiMap<&str, i64> = MultiMap::from_iter(vals);
+
+    let foo_vals: &Vec<i64> = multimap.get_vec("foo").unwrap();
+    assert!(foo_vals.contains(&123));
+    assert!(foo_vals.contains(&789));
+
+    let bar_vals: &Vec<i64> = multimap.get_vec("bar").unwrap();
+    assert!(bar_vals.contains(&456));
 }
