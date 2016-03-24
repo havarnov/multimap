@@ -1,6 +1,6 @@
 use std::borrow::Borrow;
 use std::collections::HashMap;
-use std::collections::hash_map::Keys;
+use std::collections::hash_map::{Keys, IntoIter};
 use std::fmt::{self, Debug};
 use std::iter::{Iterator, IntoIterator};
 use std::hash::Hash;
@@ -491,6 +491,17 @@ impl<'a, K, V> IntoIterator for &'a MultiMap<K, V>
     }
 }
 
+impl<K, V> IntoIterator for MultiMap<K, V>
+    where K: Eq + Hash
+{
+    type Item = (K, Vec<V>);
+    type IntoIter = IntoIter<K, Vec<V>>;
+
+    fn into_iter(self) -> IntoIter<K, Vec<V>> {
+        self.inner.into_iter()
+    }
+}
+
 #[derive(Clone)]
 pub struct Iter<'a, K: 'a, V: 'a> {
     inner: IterAll<'a,K, Vec<V>>,
@@ -733,6 +744,28 @@ fn intoiterator_for_reference_type() {
         }
         else {
             assert_eq!(value, &vec![42]);
+        }
+    }
+}
+
+#[test]
+fn intoiterator_consuming() {
+    let mut m: MultiMap<usize, usize> = MultiMap::new();
+    m.insert(1,42);
+    m.insert(1,43);
+    m.insert(4,42);
+    m.insert(8,42);
+
+    let keys = vec![1,4,8];
+
+    for (key, value) in m {
+        assert!(keys.contains(&key));
+
+        if key == 1 {
+            assert_eq!(value, vec![42, 43]);
+        }
+        else {
+            assert_eq!(value, vec![42]);
         }
     }
 }
