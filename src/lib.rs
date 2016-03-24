@@ -491,6 +491,18 @@ impl<'a, K, V> IntoIterator for &'a MultiMap<K, V>
     }
 }
 
+impl<'a, K, V> IntoIterator for &'a mut MultiMap<K, V>
+    where K: Eq + Hash
+{
+
+    type Item = (&'a K, &'a mut Vec<V>);
+    type IntoIter = IterAllMut<'a, K, Vec<V>>;
+
+    fn into_iter(mut self) -> IterAllMut<'a, K, Vec<V>> {
+        self.inner.iter_mut()
+    }
+}
+
 impl<K, V> IntoIterator for MultiMap<K, V>
     where K: Eq + Hash
 {
@@ -746,6 +758,31 @@ fn intoiterator_for_reference_type() {
             assert_eq!(value, &vec![42]);
         }
     }
+}
+
+#[test]
+fn intoiterator_for_mutable_reference_type() {
+    let mut m: MultiMap<usize, usize> = MultiMap::new();
+    m.insert(1,42);
+    m.insert(1,43);
+    m.insert(4,42);
+    m.insert(8,42);
+
+    let keys = vec![1,4,8];
+
+    for (key, value) in &mut m {
+        assert!(keys.contains(key));
+
+        if key == &1 {
+            assert_eq!(value, &vec![42, 43]);
+            value.push(666);
+        }
+        else {
+            assert_eq!(value, &vec![42]);
+        }
+    }
+
+    assert_eq!(m.get_vec(&1), Some(&vec![42, 43, 666]));
 }
 
 #[test]
