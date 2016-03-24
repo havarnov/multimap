@@ -483,11 +483,11 @@ impl<K, V> Eq for MultiMap<K, V> where K: Eq + Hash, V: Eq {}
 impl<'a, K, V> IntoIterator for &'a MultiMap<K, V>
     where K: Eq + Hash
 {
-    type Item = (&'a K, &'a V);
-    type IntoIter = Iter<'a, K, V>;
-    
-    fn into_iter(self) -> Iter<'a, K, V> {
-        self.iter()
+    type Item = (&'a K, &'a Vec<V>);
+    type IntoIter = IterAll<'a, K, Vec<V>>;
+
+    fn into_iter(self) -> IterAll<'a, K, Vec<V>> {
+        self.iter_all()
     }
 }
 
@@ -722,12 +722,18 @@ fn intoiterator_for_reference_type() {
     m.insert(1,43);
     m.insert(4,42);
     m.insert(8,42);
-    
+
     let keys = vec![1,4,8];
-    
+
     for (key, value) in &m {
         assert!(keys.contains(key));
-        assert_eq!(value, &42)
+
+        if key == &1 {
+            assert_eq!(value, &vec![42, 43]);
+        }
+        else {
+            assert_eq!(value, &vec![42]);
+        }
     }
 }
 
