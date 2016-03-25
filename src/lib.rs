@@ -557,6 +557,30 @@ impl<'a, K, V> Extend<(&'a K, &'a V)> for MultiMap<K, V>
     }
 }
 
+impl<K, V> Extend<(K, Vec<V>)> for MultiMap<K, V>
+    where K: Eq + Hash
+{
+    fn extend<T: IntoIterator<Item=(K, Vec<V>)>>(&mut self, iter: T) {
+        for (k, values) in iter {
+            if self.contains_key(&k) {
+                self.get_vec_mut(&k).unwrap().extend(values);
+            }
+            else {
+                self.inner.insert(k, values);
+            }
+        }
+    }
+}
+
+impl<'a, K, V> Extend<(&'a K, &'a Vec<V>)> for MultiMap<K, V>
+    where K: Eq + Hash + Copy,
+          V: Copy
+{
+    fn extend<T: IntoIterator<Item=(&'a K, &'a Vec<V>)>>(&mut self, iter: T) {
+        self.extend(iter.into_iter().map(|(&key, values)| (key, values.to_owned())));
+    }
+}
+
 #[derive(Clone)]
 pub struct Iter<'a, K: 'a, V: 'a> {
     inner: IterAll<'a,K, Vec<V>>,
@@ -933,4 +957,38 @@ fn test_extend_ref_hashmap() {
     assert_eq!(a.get_vec(&1), Some(&vec![42, 43]));
     assert_eq!(b.len(), 2);
     assert_eq!(b[&1], 43);
+}
+
+#[test]
+fn test_extend_consuming_multimap() {
+    let mut a = MultiMap::new();
+    a.insert(1, 42);
+
+    let mut b = MultiMap::new();
+    b.insert(1, 43);
+    b.insert(1, 44);
+    b.insert(2, 666);
+
+    a.extend(b);
+
+    assert_eq!(a.len(), 2);
+    assert_eq!(a.get_vec(&1), Some(&vec![42, 43, 44]));
+}
+
+#[test]
+fn test_extend_ref_multimap() {
+    let mut a = MultiMap::new();
+    a.insert(1, 42);
+
+    let mut b = MultiMap::new();
+    b.insert(1, 43);
+    b.insert(1, 44);
+    b.insert(2, 666);
+
+    a.extend(&b);
+
+    assert_eq!(a.len(), 2);
+    assert_eq!(a.get_vec(&1), Some(&vec![42, 43, 44]));
+    assert_eq!(b.len(), 2);
+    assert_eq!(b.get_vec(&1), Some(&vec![43, 44]));
 }
