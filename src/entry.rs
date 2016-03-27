@@ -68,9 +68,9 @@ impl<'a, K: 'a, V: 'a> OccupiedEntry<'a, K, V> {
         self.get_vec_mut().push(value);
     }
 
-    /// Inserts a new vector of values, and returns the old value.
-    pub fn insert_vec(&mut self, value: Vec<V>) -> Vec<V> {
-        self.inner.insert(value)
+    /// Extends the existing vector with the specified values.
+    pub fn insert_vec(&mut self, values: Vec<V>) {
+        self.get_vec_mut().extend(values);
     }
 
     /// Takes the values (vector) out of the entry, and returns it
