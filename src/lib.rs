@@ -124,12 +124,13 @@ impl<K, V> MultiMap<K, V> where K: Eq + Hash {
     /// map.insert("key", 42);
     /// ```
     pub fn insert(&mut self, k: K, v: V) {
-        if self.inner.contains_key(&k) {
-            let mut values = self.inner.get_mut(&k).unwrap();
-            values.push(v);
-        }
-        else {
-            self.inner.insert(k, vec![v]);
+        match self.entry(k) {
+            Entry::Occupied(mut entry) => {
+                entry.get_vec_mut().push(v);
+            },
+            Entry::Vacant(entry) => {
+                entry.insert_vec(vec![v]);
+            }
         }
     }
 
@@ -610,11 +611,13 @@ impl<K, V> Extend<(K, Vec<V>)> for MultiMap<K, V>
 {
     fn extend<T: IntoIterator<Item=(K, Vec<V>)>>(&mut self, iter: T) {
         for (k, values) in iter {
-            if self.contains_key(&k) {
-                self.get_vec_mut(&k).unwrap().extend(values);
-            }
-            else {
-                self.inner.insert(k, values);
+            match self.entry(k) {
+                Entry::Occupied(mut entry) => {
+                    entry.get_vec_mut().extend(values);
+                },
+                Entry::Vacant(entry) => {
+                    entry.insert_vec(values);
+                }
             }
         }
     }
