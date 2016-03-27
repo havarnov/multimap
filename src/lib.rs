@@ -74,6 +74,10 @@ use std::ops::Index;
 pub use std::collections::hash_map::Iter as IterAll;
 pub use std::collections::hash_map::IterMut as IterAllMut;
 
+pub use entry::{Entry, OccupiedEntry, VacantEntry};
+
+mod entry;
+
 #[derive(Clone)]
 pub struct MultiMap<K, V> {
     inner: HashMap<K, Vec<V>>,
@@ -456,6 +460,42 @@ impl<K, V> MultiMap<K, V> where K: Eq + Hash {
     /// ```
     pub fn iter_all_mut(&mut self) -> IterAllMut<K, Vec<V>> {
         self.inner.iter_mut()
+    }
+
+    /// Gets the specified key's corresponding entry in the map for in-place manipulation.
+    /// It's possible to both manipulate the vector and the 'value' (the first value in the
+    /// vector).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multimap::MultiMap;
+    ///
+    /// let mut m = MultiMap::new();
+    /// m.insert(1, 42);
+    ///
+    /// {
+    ///     let mut v = m.entry(1).or_insert(43);
+    ///     assert_eq!(v, &42);
+    ///     *v = 44;
+    /// }
+    /// assert_eq!(m.entry(2).or_insert(666), &666);
+    ///
+    /// {
+    ///     let mut v = m.entry(1).or_insert_vec(vec![43]);
+    ///     assert_eq!(v, &vec![44]);
+    ///     v.push(50);
+    /// }
+    /// assert_eq!(m.entry(2).or_insert_vec(vec![666]), &vec![666]);
+    ///
+    /// assert_eq!(m.get_vec(&1), Some(&vec![44, 50]));
+    /// ```
+    pub fn entry(&mut self, k: K) -> Entry<K, V> {
+        use std::collections::hash_map::Entry as HashMapEntry;
+        match self.inner.entry(k) {
+            HashMapEntry::Occupied(entry) => Entry::Occupied(OccupiedEntry {inner: entry}),
+            HashMapEntry::Vacant(entry) => Entry::Vacant(VacantEntry {inner: entry})
+        }
     }
 }
 
@@ -999,4 +1039,37 @@ fn test_extend_ref_multimap() {
     assert_eq!(a.get_vec(&1), Some(&vec![42, 43, 44]));
     assert_eq!(b.len(), 2);
     assert_eq!(b.get_vec(&1), Some(&vec![43, 44]));
+}
+
+#[test]
+fn test_entry() {
+    let mut m = MultiMap::new();
+    m.insert(1, 42);
+
+    {
+        let mut v = m.entry(1).or_insert(43);
+        assert_eq!(v, &42);
+        *v = 44;
+    }
+    assert_eq!(m.entry(2).or_insert(666), &666);
+
+    assert_eq!(m[&1], 44);
+    assert_eq!(m[&2], 666);
+}
+
+#[test]
+fn test_entry_vec() {
+    let mut m = MultiMap::new();
+    m.insert(1, 42);
+
+    {
+        let mut v = m.entry(1).or_insert_vec(vec![43]);
+        assert_eq!(v, &vec![42]);
+        *v.first_mut().unwrap() = 44;
+    }
+    assert_eq!(m.entry(2).or_insert_vec(vec![666]), &vec![666]);
+
+
+    assert_eq!(m[&1], 44);
+    assert_eq!(m[&2], 666);
 }
