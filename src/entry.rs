@@ -12,13 +12,13 @@ use std::collections::hash_map::VacantEntry as HashMapVacantEntry;
 /// A view into a single occupied location in a MultiMap.
 pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
     #[doc(hidden)]
-    pub inner: HashMapOccupiedEntry<'a, K, Vec<V>>
+    pub inner: HashMapOccupiedEntry<'a, K, Vec<V>>,
 }
 
 /// A view into a single empty location in a MultiMap.
 pub struct VacantEntry<'a, K: 'a, V: 'a> {
     #[doc(hidden)]
-    pub inner: HashMapVacantEntry<'a, K, Vec<V>>
+    pub inner: HashMapVacantEntry<'a, K, Vec<V>>,
 }
 
 /// A view into a single location in a map, which may be vacant or occupied.
@@ -27,7 +27,7 @@ pub enum Entry<'a, K: 'a, V: 'a> {
     Occupied(OccupiedEntry<'a, K, V>),
 
     /// A vacant Entry.
-    Vacant(VacantEntry<'a, K, V>)
+    Vacant(VacantEntry<'a, K, V>),
 }
 
 impl<'a, K: 'a, V: 'a> OccupiedEntry<'a, K, V> {
@@ -106,7 +106,8 @@ impl<'a, K: 'a, V: 'a> Entry<'a, K, V> {
     }
 
     /// Ensures a value is in the entry by inserting the default values if empty, and returns
-    /// a mutable reference to the values (the corresponding vector to the specified key) in the entry.
+    /// a mutable reference to the values (the corresponding vector to the specified key) in
+    /// the entry.
     pub fn or_insert_vec(self, defaults: Vec<V>) -> &'a mut Vec<V> {
         match self {
             Entry::Occupied(entry) => entry.into_vec_mut(),

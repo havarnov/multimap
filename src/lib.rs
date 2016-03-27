@@ -83,8 +83,9 @@ pub struct MultiMap<K, V> {
     inner: HashMap<K, Vec<V>>,
 }
 
-impl<K, V> MultiMap<K, V> where K: Eq + Hash {
-
+impl<K, V> MultiMap<K, V>
+    where K: Eq + Hash
+{
     /// Creates an empty MultiMap
     ///
     /// # Examples
@@ -94,7 +95,7 @@ impl<K, V> MultiMap<K, V> where K: Eq + Hash {
     ///
     /// let mut map: MultiMap<&str, isize> = MultiMap::new();
     /// ```
-    pub fn new() -> MultiMap<K,V> {
+    pub fn new() -> MultiMap<K, V> {
         MultiMap { inner: HashMap::new() }
     }
 
@@ -107,7 +108,7 @@ impl<K, V> MultiMap<K, V> where K: Eq + Hash {
     ///
     /// let mut map: MultiMap<&str, isize> = MultiMap::with_capacity(20);
     /// ```
-    pub fn with_capacity(capacity: usize) -> MultiMap<K,V> {
+    pub fn with_capacity(capacity: usize) -> MultiMap<K, V> {
         MultiMap { inner: HashMap::with_capacity(capacity) }
     }
 
@@ -127,7 +128,7 @@ impl<K, V> MultiMap<K, V> where K: Eq + Hash {
         match self.entry(k) {
             Entry::Occupied(mut entry) => {
                 entry.get_vec_mut().push(v);
-            },
+            }
             Entry::Vacant(entry) => {
                 entry.insert_vec(vec![v]);
             }
@@ -494,8 +495,8 @@ impl<K, V> MultiMap<K, V> where K: Eq + Hash {
     pub fn entry(&mut self, k: K) -> Entry<K, V> {
         use std::collections::hash_map::Entry as HashMapEntry;
         match self.inner.entry(k) {
-            HashMapEntry::Occupied(entry) => Entry::Occupied(OccupiedEntry {inner: entry}),
-            HashMapEntry::Vacant(entry) => Entry::Vacant(VacantEntry {inner: entry})
+            HashMapEntry::Occupied(entry) => Entry::Occupied(OccupiedEntry { inner: entry }),
+            HashMapEntry::Vacant(entry) => Entry::Vacant(VacantEntry { inner: entry }),
         }
     }
 }
@@ -507,40 +508,53 @@ impl<'a, K, V, Q: ?Sized> Index<&'a Q> for MultiMap<K, V>
     type Output = V;
 
     fn index(&self, index: &Q) -> &V {
-        self.inner.get(index)
+        self.inner
+            .get(index)
             .map(|v| &v[0])
             .expect("no entry found for key")
     }
 }
 
-impl<K, V> Debug for MultiMap<K, V> where K: Eq + Hash + Debug, V: Debug {
+impl<K, V> Debug for MultiMap<K, V>
+    where K: Eq + Hash + Debug,
+          V: Debug
+{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_map().entries(self.iter_all()).finish()
     }
 }
 
-impl<K, V> PartialEq for MultiMap<K, V> where K: Eq + Hash, V: PartialEq {
+impl<K, V> PartialEq for MultiMap<K, V>
+    where K: Eq + Hash,
+          V: PartialEq
+{
     fn eq(&self, other: &MultiMap<K, V>) -> bool {
-        if self.len() != other.len() { return false; }
-
-        self.iter_all().all(|(key, value)|
-            other.get_vec(key).map_or(false, |v| *value == *v)
-        )
-    }
-}
-
-impl<K, V> Eq for MultiMap<K, V> where K: Eq + Hash, V: Eq {}
-
-impl<K, V> Default for MultiMap<K, V> where K: Eq + Hash {
-    fn default() -> MultiMap<K, V> {
-        MultiMap {
-            inner: Default::default()
+        if self.len() != other.len() {
+            return false;
         }
+
+        self.iter_all().all(|(key, value)| other.get_vec(key).map_or(false, |v| *value == *v))
     }
 }
 
-impl<K, V> FromIterator<(K, V)> for MultiMap<K, V> where K: Eq + Hash {
-    fn from_iter<T: IntoIterator<Item=(K, V)>>(iterable: T) -> MultiMap<K, V> {
+impl<K, V> Eq for MultiMap<K, V>
+    where K: Eq + Hash,
+          V: Eq
+{
+}
+
+impl<K, V> Default for MultiMap<K, V>
+    where K: Eq + Hash
+{
+    fn default() -> MultiMap<K, V> {
+        MultiMap { inner: Default::default() }
+    }
+}
+
+impl<K, V> FromIterator<(K, V)> for MultiMap<K, V>
+    where K: Eq + Hash
+{
+    fn from_iter<T: IntoIterator<Item = (K, V)>>(iterable: T) -> MultiMap<K, V> {
         let iter = iterable.into_iter();
         let hint = iter.size_hint().0;
 
@@ -567,7 +581,6 @@ impl<'a, K, V> IntoIterator for &'a MultiMap<K, V>
 impl<'a, K, V> IntoIterator for &'a mut MultiMap<K, V>
     where K: Eq + Hash
 {
-
     type Item = (&'a K, &'a mut Vec<V>);
     type IntoIter = IterAllMut<'a, K, Vec<V>>;
 
@@ -590,7 +603,7 @@ impl<K, V> IntoIterator for MultiMap<K, V>
 impl<K, V> Extend<(K, V)> for MultiMap<K, V>
     where K: Eq + Hash
 {
-    fn extend<T: IntoIterator<Item=(K, V)>>(&mut self, iter: T) {
+    fn extend<T: IntoIterator<Item = (K, V)>>(&mut self, iter: T) {
         for (k, v) in iter {
             self.insert(k, v);
         }
@@ -601,7 +614,7 @@ impl<'a, K, V> Extend<(&'a K, &'a V)> for MultiMap<K, V>
     where K: Eq + Hash + Copy,
           V: Copy
 {
-    fn extend<T: IntoIterator<Item=(&'a K, &'a V)>>(&mut self, iter: T) {
+    fn extend<T: IntoIterator<Item = (&'a K, &'a V)>>(&mut self, iter: T) {
         self.extend(iter.into_iter().map(|(&key, &value)| (key, value)));
     }
 }
@@ -609,12 +622,12 @@ impl<'a, K, V> Extend<(&'a K, &'a V)> for MultiMap<K, V>
 impl<K, V> Extend<(K, Vec<V>)> for MultiMap<K, V>
     where K: Eq + Hash
 {
-    fn extend<T: IntoIterator<Item=(K, Vec<V>)>>(&mut self, iter: T) {
+    fn extend<T: IntoIterator<Item = (K, Vec<V>)>>(&mut self, iter: T) {
         for (k, values) in iter {
             match self.entry(k) {
                 Entry::Occupied(mut entry) => {
                     entry.get_vec_mut().extend(values);
-                },
+                }
                 Entry::Vacant(entry) => {
                     entry.insert_vec(values);
                 }
@@ -627,46 +640,54 @@ impl<'a, K, V> Extend<(&'a K, &'a Vec<V>)> for MultiMap<K, V>
     where K: Eq + Hash + Copy,
           V: Copy
 {
-    fn extend<T: IntoIterator<Item=(&'a K, &'a Vec<V>)>>(&mut self, iter: T) {
+    fn extend<T: IntoIterator<Item = (&'a K, &'a Vec<V>)>>(&mut self, iter: T) {
         self.extend(iter.into_iter().map(|(&key, values)| (key, values.to_owned())));
     }
 }
 
 #[derive(Clone)]
 pub struct Iter<'a, K: 'a, V: 'a> {
-    inner: IterAll<'a,K, Vec<V>>,
+    inner: IterAll<'a, K, Vec<V>>,
 }
 
 impl<'a, K, V> Iterator for Iter<'a, K, V> {
     type Item = (&'a K, &'a V);
 
     fn next(&mut self) -> Option<(&'a K, &'a V)> {
-        self.inner.next().map(|(k,v)| (k, &v[0]))
+        self.inner.next().map(|(k, v)| (k, &v[0]))
     }
 
-    fn size_hint(&self) -> (usize, Option<usize>) { self.inner.size_hint() }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
 }
 
 impl<'a, K, V> ExactSizeIterator for Iter<'a, K, V> {
-    fn len(&self) -> usize { self.inner.len() }
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
 }
 
 pub struct IterMut<'a, K: 'a, V: 'a> {
-    inner: IterAllMut<'a,K, Vec<V>>,
+    inner: IterAllMut<'a, K, Vec<V>>,
 }
 
 impl<'a, K, V> Iterator for IterMut<'a, K, V> {
     type Item = (&'a K, &'a mut V);
 
     fn next(&mut self) -> Option<(&'a K, &'a mut V)> {
-        self.inner.next().map(|(k,v)| (k, &mut v[0]))
+        self.inner.next().map(|(k, v)| (k, &mut v[0]))
     }
 
-    fn size_hint(&self) -> (usize, Option<usize>) { self.inner.size_hint() }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
 }
 
 impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
-    fn len(&self) -> usize { self.inner.len() }
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
 }
 
 #[test]
@@ -687,14 +708,14 @@ fn with_capacity() {
 #[test]
 fn insert() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,3);
+    m.insert(1, 3);
 }
 
 #[test]
 fn insert_existing() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,3);
-    m.insert(1,4);
+    m.insert(1, 3);
+    m.insert(1, 4);
 }
 
 #[test]
@@ -707,7 +728,7 @@ fn index_no_entry() {
 #[test]
 fn index() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,42);
+    m.insert(1, 42);
     let values = m[&1];
     assert_eq!(values, 42);
 }
@@ -715,7 +736,7 @@ fn index() {
 #[test]
 fn contains_key_true() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,42);
+    m.insert(1, 42);
     assert!(m.contains_key(&1));
 }
 
@@ -728,9 +749,9 @@ fn contains_key_false() {
 #[test]
 fn len() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,42);
-    m.insert(2,1337);
-    m.insert(3,99);
+    m.insert(1, 42);
+    m.insert(2, 1337);
+    m.insert(3, 99);
     assert_eq!(m.len(), 3);
 }
 
@@ -744,7 +765,7 @@ fn remove_not_present() {
 #[test]
 fn remove_present() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,42);
+    m.insert(1, 42);
     let v = m.remove(&1);
     assert_eq!(v, Some(vec![42]));
 }
@@ -758,7 +779,7 @@ fn get_not_present() {
 #[test]
 fn get_present() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,42);
+    m.insert(1, 42);
     assert_eq!(m.get(&1), Some(&42));
 }
 
@@ -771,8 +792,8 @@ fn get_vec_not_present() {
 #[test]
 fn get_vec_present() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,42);
-    m.insert(1,1337);
+    m.insert(1, 42);
+    m.insert(1, 1337);
     assert_eq!(m.get_vec(&1), Some(&vec![42, 1337]));
 }
 
@@ -791,14 +812,14 @@ fn is_empty_true() {
 #[test]
 fn is_empty_false() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,42);
+    m.insert(1, 42);
     assert_eq!(m.is_empty(), false);
 }
 
 #[test]
 fn clear() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,42);
+    m.insert(1, 42);
     m.clear();
     assert!(m.is_empty());
 }
@@ -806,7 +827,7 @@ fn clear() {
 #[test]
 fn get_mut() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,42);
+    m.insert(1, 42);
     if let Some(v) = m.get_mut(&1) {
         *v = 1337;
     }
@@ -816,22 +837,22 @@ fn get_mut() {
 #[test]
 fn get_vec_mut() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,42);
-    m.insert(1,1337);
+    m.insert(1, 42);
+    m.insert(1, 1337);
     if let Some(v) = m.get_vec_mut(&1) {
         (*v)[0] = 5;
         (*v)[1] = 10;
     }
-    assert_eq!(m.get_vec(&1), Some(&vec![5,10]))
+    assert_eq!(m.get_vec(&1), Some(&vec![5, 10]))
 }
 
 #[test]
 fn keys() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,42);
-    m.insert(2,42);
-    m.insert(4,42);
-    m.insert(8,42);
+    m.insert(1, 42);
+    m.insert(2, 42);
+    m.insert(4, 42);
+    m.insert(8, 42);
 
     let keys: Vec<_> = m.keys().cloned().collect();
     assert_eq!(keys.len(), 4);
@@ -844,10 +865,10 @@ fn keys() {
 #[test]
 fn iter() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,42);
-    m.insert(1,42);
-    m.insert(4,42);
-    m.insert(8,42);
+    m.insert(1, 42);
+    m.insert(1, 42);
+    m.insert(4, 42);
+    m.insert(8, 42);
 
     let mut iter = m.iter();
 
@@ -859,20 +880,19 @@ fn iter() {
 #[test]
 fn intoiterator_for_reference_type() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,42);
-    m.insert(1,43);
-    m.insert(4,42);
-    m.insert(8,42);
+    m.insert(1, 42);
+    m.insert(1, 43);
+    m.insert(4, 42);
+    m.insert(8, 42);
 
-    let keys = vec![1,4,8];
+    let keys = vec![1, 4, 8];
 
     for (key, value) in &m {
         assert!(keys.contains(key));
 
         if key == &1 {
             assert_eq!(value, &vec![42, 43]);
-        }
-        else {
+        } else {
             assert_eq!(value, &vec![42]);
         }
     }
@@ -881,12 +901,12 @@ fn intoiterator_for_reference_type() {
 #[test]
 fn intoiterator_for_mutable_reference_type() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,42);
-    m.insert(1,43);
-    m.insert(4,42);
-    m.insert(8,42);
+    m.insert(1, 42);
+    m.insert(1, 43);
+    m.insert(4, 42);
+    m.insert(8, 42);
 
-    let keys = vec![1,4,8];
+    let keys = vec![1, 4, 8];
 
     for (key, value) in &mut m {
         assert!(keys.contains(key));
@@ -894,8 +914,7 @@ fn intoiterator_for_mutable_reference_type() {
         if key == &1 {
             assert_eq!(value, &vec![42, 43]);
             value.push(666);
-        }
-        else {
+        } else {
             assert_eq!(value, &vec![42]);
         }
     }
@@ -906,20 +925,19 @@ fn intoiterator_for_mutable_reference_type() {
 #[test]
 fn intoiterator_consuming() {
     let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1,42);
-    m.insert(1,43);
-    m.insert(4,42);
-    m.insert(8,42);
+    m.insert(1, 42);
+    m.insert(1, 43);
+    m.insert(4, 42);
+    m.insert(8, 42);
 
-    let keys = vec![1,4,8];
+    let keys = vec![1, 4, 8];
 
     for (key, value) in m {
         assert!(keys.contains(&key));
 
         if key == 1 {
             assert_eq!(value, vec![42, 43]);
-        }
-        else {
+        } else {
             assert_eq!(value, vec![42]);
         }
     }
@@ -937,8 +955,7 @@ fn test_fmt_debug() {
 
     let map_str = format!("{:?}", map);
 
-    assert!(map_str == "{1: [2, 5, -1], 3: [4]}" ||
-            map_str == "{3: [4], 1: [2, 5, -1]}");
+    assert!(map_str == "{1: [2, 5, -1], 3: [4]}" || map_str == "{3: [4], 1: [2, 5, -1]}");
     assert_eq!(format!("{:?}", empty), "{}");
 }
 
