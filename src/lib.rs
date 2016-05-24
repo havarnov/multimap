@@ -690,406 +690,414 @@ impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
     }
 }
 
-#[test]
-fn create() {
-    let _: MultiMap<usize, usize> = MultiMap { inner: HashMap::new() };
-}
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use std::iter::FromIterator;
 
-#[test]
-fn new() {
-    let _: MultiMap<usize, usize> = MultiMap::new();
-}
+    use super::*;
 
-#[test]
-fn with_capacity() {
-    let _: MultiMap<usize, usize> = MultiMap::with_capacity(20);
-}
+    #[test]
+    fn create() {
+        let _: MultiMap<usize, usize> = MultiMap { inner: HashMap::new() };
+    }
 
-#[test]
-fn insert() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 3);
-}
+    #[test]
+    fn new() {
+        let _: MultiMap<usize, usize> = MultiMap::new();
+    }
 
-#[test]
-fn insert_existing() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 3);
-    m.insert(1, 4);
-}
+    #[test]
+    fn with_capacity() {
+        let _: MultiMap<usize, usize> = MultiMap::with_capacity(20);
+    }
 
-#[test]
+    #[test]
+    fn insert() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 3);
+    }
+
+    #[test]
+    fn insert_existing() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 3);
+        m.insert(1, 4);
+    }
+
+    #[test]
 #[should_panic]
-fn index_no_entry() {
-    let m: MultiMap<usize, usize> = MultiMap::new();
-    &m[&1];
-}
-
-#[test]
-fn index() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 42);
-    let values = m[&1];
-    assert_eq!(values, 42);
-}
-
-#[test]
-fn contains_key_true() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 42);
-    assert!(m.contains_key(&1));
-}
-
-#[test]
-fn contains_key_false() {
-    let m: MultiMap<usize, usize> = MultiMap::new();
-    assert_eq!(m.contains_key(&1), false);
-}
-
-#[test]
-fn len() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 42);
-    m.insert(2, 1337);
-    m.insert(3, 99);
-    assert_eq!(m.len(), 3);
-}
-
-#[test]
-fn remove_not_present() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    let v = m.remove(&1);
-    assert_eq!(v, None);
-}
-
-#[test]
-fn remove_present() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 42);
-    let v = m.remove(&1);
-    assert_eq!(v, Some(vec![42]));
-}
-
-#[test]
-fn get_not_present() {
-    let m: MultiMap<usize, usize> = MultiMap::new();
-    assert_eq!(m.get(&1), None);
-}
-
-#[test]
-fn get_present() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 42);
-    assert_eq!(m.get(&1), Some(&42));
-}
-
-#[test]
-fn get_vec_not_present() {
-    let m: MultiMap<usize, usize> = MultiMap::new();
-    assert_eq!(m.get_vec(&1), None);
-}
-
-#[test]
-fn get_vec_present() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 42);
-    m.insert(1, 1337);
-    assert_eq!(m.get_vec(&1), Some(&vec![42, 1337]));
-}
-
-#[test]
-fn capacity() {
-    let m: MultiMap<usize, usize> = MultiMap::with_capacity(20);
-    assert!(m.capacity() >= 20);
-}
-
-#[test]
-fn is_empty_true() {
-    let m: MultiMap<usize, usize> = MultiMap::new();
-    assert_eq!(m.is_empty(), true);
-}
-
-#[test]
-fn is_empty_false() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 42);
-    assert_eq!(m.is_empty(), false);
-}
-
-#[test]
-fn clear() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 42);
-    m.clear();
-    assert!(m.is_empty());
-}
-
-#[test]
-fn get_mut() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 42);
-    if let Some(v) = m.get_mut(&1) {
-        *v = 1337;
+    fn index_no_entry() {
+        let m: MultiMap<usize, usize> = MultiMap::new();
+        &m[&1];
     }
-    assert_eq!(m[&1], 1337)
-}
 
-#[test]
-fn get_vec_mut() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 42);
-    m.insert(1, 1337);
-    if let Some(v) = m.get_vec_mut(&1) {
-        (*v)[0] = 5;
-        (*v)[1] = 10;
+    #[test]
+    fn index() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        let values = m[&1];
+        assert_eq!(values, 42);
     }
-    assert_eq!(m.get_vec(&1), Some(&vec![5, 10]))
-}
 
-#[test]
-fn keys() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 42);
-    m.insert(2, 42);
-    m.insert(4, 42);
-    m.insert(8, 42);
+    #[test]
+    fn contains_key_true() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        assert!(m.contains_key(&1));
+    }
 
-    let keys: Vec<_> = m.keys().cloned().collect();
-    assert_eq!(keys.len(), 4);
-    assert!(keys.contains(&1));
-    assert!(keys.contains(&2));
-    assert!(keys.contains(&4));
-    assert!(keys.contains(&8));
-}
+    #[test]
+    fn contains_key_false() {
+        let m: MultiMap<usize, usize> = MultiMap::new();
+        assert_eq!(m.contains_key(&1), false);
+    }
 
-#[test]
-fn iter() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 42);
-    m.insert(1, 42);
-    m.insert(4, 42);
-    m.insert(8, 42);
+    #[test]
+    fn len() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        m.insert(2, 1337);
+        m.insert(3, 99);
+        assert_eq!(m.len(), 3);
+    }
 
-    let mut iter = m.iter();
+    #[test]
+    fn remove_not_present() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        let v = m.remove(&1);
+        assert_eq!(v, None);
+    }
 
-    for _ in iter.by_ref().take(2) {}
+    #[test]
+    fn remove_present() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        let v = m.remove(&1);
+        assert_eq!(v, Some(vec![42]));
+    }
 
-    assert_eq!(iter.len(), 1);
-}
+    #[test]
+    fn get_not_present() {
+        let m: MultiMap<usize, usize> = MultiMap::new();
+        assert_eq!(m.get(&1), None);
+    }
 
-#[test]
-fn intoiterator_for_reference_type() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 42);
-    m.insert(1, 43);
-    m.insert(4, 42);
-    m.insert(8, 42);
+    #[test]
+    fn get_present() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        assert_eq!(m.get(&1), Some(&42));
+    }
 
-    let keys = vec![1, 4, 8];
+    #[test]
+    fn get_vec_not_present() {
+        let m: MultiMap<usize, usize> = MultiMap::new();
+        assert_eq!(m.get_vec(&1), None);
+    }
 
-    for (key, value) in &m {
-        assert!(keys.contains(key));
+    #[test]
+    fn get_vec_present() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        m.insert(1, 1337);
+        assert_eq!(m.get_vec(&1), Some(&vec![42, 1337]));
+    }
 
-        if key == &1 {
-            assert_eq!(value, &vec![42, 43]);
-        } else {
-            assert_eq!(value, &vec![42]);
+    #[test]
+    fn capacity() {
+        let m: MultiMap<usize, usize> = MultiMap::with_capacity(20);
+        assert!(m.capacity() >= 20);
+    }
+
+    #[test]
+    fn is_empty_true() {
+        let m: MultiMap<usize, usize> = MultiMap::new();
+        assert_eq!(m.is_empty(), true);
+    }
+
+    #[test]
+    fn is_empty_false() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        assert_eq!(m.is_empty(), false);
+    }
+
+    #[test]
+    fn clear() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        m.clear();
+        assert!(m.is_empty());
+    }
+
+    #[test]
+    fn get_mut() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        if let Some(v) = m.get_mut(&1) {
+            *v = 1337;
         }
+        assert_eq!(m[&1], 1337)
     }
-}
 
-#[test]
-fn intoiterator_for_mutable_reference_type() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 42);
-    m.insert(1, 43);
-    m.insert(4, 42);
-    m.insert(8, 42);
+    #[test]
+    fn get_vec_mut() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        m.insert(1, 1337);
+        if let Some(v) = m.get_vec_mut(&1) {
+            (*v)[0] = 5;
+            (*v)[1] = 10;
+        }
+        assert_eq!(m.get_vec(&1), Some(&vec![5, 10]))
+    }
 
-    let keys = vec![1, 4, 8];
+    #[test]
+    fn keys() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        m.insert(2, 42);
+        m.insert(4, 42);
+        m.insert(8, 42);
 
-    for (key, value) in &mut m {
-        assert!(keys.contains(key));
+        let keys: Vec<_> = m.keys().cloned().collect();
+        assert_eq!(keys.len(), 4);
+        assert!(keys.contains(&1));
+        assert!(keys.contains(&2));
+        assert!(keys.contains(&4));
+        assert!(keys.contains(&8));
+    }
 
-        if key == &1 {
-            assert_eq!(value, &vec![42, 43]);
-            value.push(666);
-        } else {
-            assert_eq!(value, &vec![42]);
+    #[test]
+    fn iter() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        m.insert(1, 42);
+        m.insert(4, 42);
+        m.insert(8, 42);
+
+        let mut iter = m.iter();
+
+        for _ in iter.by_ref().take(2) {}
+
+        assert_eq!(iter.len(), 1);
+    }
+
+    #[test]
+    fn intoiterator_for_reference_type() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        m.insert(1, 43);
+        m.insert(4, 42);
+        m.insert(8, 42);
+
+        let keys = vec![1, 4, 8];
+
+        for (key, value) in &m {
+            assert!(keys.contains(key));
+
+            if key == &1 {
+                assert_eq!(value, &vec![42, 43]);
+            } else {
+                assert_eq!(value, &vec![42]);
+            }
         }
     }
 
-    assert_eq!(m.get_vec(&1), Some(&vec![42, 43, 666]));
-}
+    #[test]
+    fn intoiterator_for_mutable_reference_type() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        m.insert(1, 43);
+        m.insert(4, 42);
+        m.insert(8, 42);
 
-#[test]
-fn intoiterator_consuming() {
-    let mut m: MultiMap<usize, usize> = MultiMap::new();
-    m.insert(1, 42);
-    m.insert(1, 43);
-    m.insert(4, 42);
-    m.insert(8, 42);
+        let keys = vec![1, 4, 8];
 
-    let keys = vec![1, 4, 8];
+        for (key, value) in &mut m {
+            assert!(keys.contains(key));
 
-    for (key, value) in m {
-        assert!(keys.contains(&key));
+            if key == &1 {
+                assert_eq!(value, &vec![42, 43]);
+                value.push(666);
+            } else {
+                assert_eq!(value, &vec![42]);
+            }
+        }
 
-        if key == 1 {
-            assert_eq!(value, vec![42, 43]);
-        } else {
-            assert_eq!(value, vec![42]);
+        assert_eq!(m.get_vec(&1), Some(&vec![42, 43, 666]));
+    }
+
+    #[test]
+    fn intoiterator_consuming() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        m.insert(1, 43);
+        m.insert(4, 42);
+        m.insert(8, 42);
+
+        let keys = vec![1, 4, 8];
+
+        for (key, value) in m {
+            assert!(keys.contains(&key));
+
+            if key == 1 {
+                assert_eq!(value, vec![42, 43]);
+            } else {
+                assert_eq!(value, vec![42]);
+            }
         }
     }
-}
 
-#[test]
-fn test_fmt_debug() {
-    let mut map = MultiMap::new();
-    let empty: MultiMap<i32, i32> = MultiMap::new();
+    #[test]
+    fn test_fmt_debug() {
+        let mut map = MultiMap::new();
+        let empty: MultiMap<i32, i32> = MultiMap::new();
 
-    map.insert(1, 2);
-    map.insert(1, 5);
-    map.insert(1, -1);
-    map.insert(3, 4);
+        map.insert(1, 2);
+        map.insert(1, 5);
+        map.insert(1, -1);
+        map.insert(3, 4);
 
-    let map_str = format!("{:?}", map);
+        let map_str = format!("{:?}", map);
 
-    assert!(map_str == "{1: [2, 5, -1], 3: [4]}" || map_str == "{3: [4], 1: [2, 5, -1]}");
-    assert_eq!(format!("{:?}", empty), "{}");
-}
-
-#[test]
-fn test_eq() {
-    let mut m1 = MultiMap::new();
-    m1.insert(1, 2);
-    m1.insert(2, 3);
-    m1.insert(3, 4);
-    let mut m2 = MultiMap::new();
-    m2.insert(1, 2);
-    m2.insert(2, 3);
-    assert!(m1 != m2);
-    m2.insert(3, 4);
-    assert_eq!(m1, m2);
-    m2.insert(3, 4);
-    assert!(m1 != m2);
-    m1.insert(3, 4);
-    assert_eq!(m1, m2);
-}
-
-#[test]
-fn test_default() {
-    let _: MultiMap<u8, u8> = Default::default();
-}
-
-#[test]
-fn test_from_iterator() {
-    let vals: Vec<(&str, i64)> = vec![("foo", 123), ("bar", 456), ("foo", 789)];
-    let multimap: MultiMap<&str, i64> = MultiMap::from_iter(vals);
-
-    let foo_vals: &Vec<i64> = multimap.get_vec("foo").unwrap();
-    assert!(foo_vals.contains(&123));
-    assert!(foo_vals.contains(&789));
-
-    let bar_vals: &Vec<i64> = multimap.get_vec("bar").unwrap();
-    assert!(bar_vals.contains(&456));
-}
-
-#[test]
-fn test_extend_consuming_hashmap() {
-    let mut a = MultiMap::new();
-    a.insert(1, 42);
-
-    let mut b = HashMap::new();
-    b.insert(1, 43);
-    b.insert(2, 666);
-
-    a.extend(b);
-
-    assert_eq!(a.len(), 2);
-    assert_eq!(a.get_vec(&1), Some(&vec![42, 43]));
-}
-
-#[test]
-fn test_extend_ref_hashmap() {
-    let mut a = MultiMap::new();
-    a.insert(1, 42);
-
-    let mut b = HashMap::new();
-    b.insert(1, 43);
-    b.insert(2, 666);
-
-    a.extend(&b);
-
-    assert_eq!(a.len(), 2);
-    assert_eq!(a.get_vec(&1), Some(&vec![42, 43]));
-    assert_eq!(b.len(), 2);
-    assert_eq!(b[&1], 43);
-}
-
-#[test]
-fn test_extend_consuming_multimap() {
-    let mut a = MultiMap::new();
-    a.insert(1, 42);
-
-    let mut b = MultiMap::new();
-    b.insert(1, 43);
-    b.insert(1, 44);
-    b.insert(2, 666);
-
-    a.extend(b);
-
-    assert_eq!(a.len(), 2);
-    assert_eq!(a.get_vec(&1), Some(&vec![42, 43, 44]));
-}
-
-#[test]
-fn test_extend_ref_multimap() {
-    let mut a = MultiMap::new();
-    a.insert(1, 42);
-
-    let mut b = MultiMap::new();
-    b.insert(1, 43);
-    b.insert(1, 44);
-    b.insert(2, 666);
-
-    a.extend(&b);
-
-    assert_eq!(a.len(), 2);
-    assert_eq!(a.get_vec(&1), Some(&vec![42, 43, 44]));
-    assert_eq!(b.len(), 2);
-    assert_eq!(b.get_vec(&1), Some(&vec![43, 44]));
-}
-
-#[test]
-fn test_entry() {
-    let mut m = MultiMap::new();
-    m.insert(1, 42);
-
-    {
-        let mut v = m.entry(1).or_insert(43);
-        assert_eq!(v, &42);
-        *v = 44;
+        assert!(map_str == "{1: [2, 5, -1], 3: [4]}" || map_str == "{3: [4], 1: [2, 5, -1]}");
+        assert_eq!(format!("{:?}", empty), "{}");
     }
-    assert_eq!(m.entry(2).or_insert(666), &666);
 
-    assert_eq!(m[&1], 44);
-    assert_eq!(m[&2], 666);
-}
-
-#[test]
-fn test_entry_vec() {
-    let mut m = MultiMap::new();
-    m.insert(1, 42);
-
-    {
-        let mut v = m.entry(1).or_insert_vec(vec![43]);
-        assert_eq!(v, &vec![42]);
-        *v.first_mut().unwrap() = 44;
+    #[test]
+    fn test_eq() {
+        let mut m1 = MultiMap::new();
+        m1.insert(1, 2);
+        m1.insert(2, 3);
+        m1.insert(3, 4);
+        let mut m2 = MultiMap::new();
+        m2.insert(1, 2);
+        m2.insert(2, 3);
+        assert!(m1 != m2);
+        m2.insert(3, 4);
+        assert_eq!(m1, m2);
+        m2.insert(3, 4);
+        assert!(m1 != m2);
+        m1.insert(3, 4);
+        assert_eq!(m1, m2);
     }
-    assert_eq!(m.entry(2).or_insert_vec(vec![666]), &vec![666]);
+
+    #[test]
+    fn test_default() {
+        let _: MultiMap<u8, u8> = Default::default();
+    }
+
+    #[test]
+    fn test_from_iterator() {
+        let vals: Vec<(&str, i64)> = vec![("foo", 123), ("bar", 456), ("foo", 789)];
+        let multimap: MultiMap<&str, i64> = MultiMap::from_iter(vals);
+
+        let foo_vals: &Vec<i64> = multimap.get_vec("foo").unwrap();
+        assert!(foo_vals.contains(&123));
+        assert!(foo_vals.contains(&789));
+
+        let bar_vals: &Vec<i64> = multimap.get_vec("bar").unwrap();
+        assert!(bar_vals.contains(&456));
+    }
+
+    #[test]
+    fn test_extend_consuming_hashmap() {
+        let mut a = MultiMap::new();
+        a.insert(1, 42);
+
+        let mut b = HashMap::new();
+        b.insert(1, 43);
+        b.insert(2, 666);
+
+        a.extend(b);
+
+        assert_eq!(a.len(), 2);
+        assert_eq!(a.get_vec(&1), Some(&vec![42, 43]));
+    }
+
+    #[test]
+    fn test_extend_ref_hashmap() {
+        let mut a = MultiMap::new();
+        a.insert(1, 42);
+
+        let mut b = HashMap::new();
+        b.insert(1, 43);
+        b.insert(2, 666);
+
+        a.extend(&b);
+
+        assert_eq!(a.len(), 2);
+        assert_eq!(a.get_vec(&1), Some(&vec![42, 43]));
+        assert_eq!(b.len(), 2);
+        assert_eq!(b[&1], 43);
+    }
+
+    #[test]
+    fn test_extend_consuming_multimap() {
+        let mut a = MultiMap::new();
+        a.insert(1, 42);
+
+        let mut b = MultiMap::new();
+        b.insert(1, 43);
+        b.insert(1, 44);
+        b.insert(2, 666);
+
+        a.extend(b);
+
+        assert_eq!(a.len(), 2);
+        assert_eq!(a.get_vec(&1), Some(&vec![42, 43, 44]));
+    }
+
+    #[test]
+    fn test_extend_ref_multimap() {
+        let mut a = MultiMap::new();
+        a.insert(1, 42);
+
+        let mut b = MultiMap::new();
+        b.insert(1, 43);
+        b.insert(1, 44);
+        b.insert(2, 666);
+
+        a.extend(&b);
+
+        assert_eq!(a.len(), 2);
+        assert_eq!(a.get_vec(&1), Some(&vec![42, 43, 44]));
+        assert_eq!(b.len(), 2);
+        assert_eq!(b.get_vec(&1), Some(&vec![43, 44]));
+    }
+
+    #[test]
+    fn test_entry() {
+        let mut m = MultiMap::new();
+        m.insert(1, 42);
+
+        {
+            let mut v = m.entry(1).or_insert(43);
+            assert_eq!(v, &42);
+            *v = 44;
+        }
+        assert_eq!(m.entry(2).or_insert(666), &666);
+
+        assert_eq!(m[&1], 44);
+        assert_eq!(m[&2], 666);
+    }
+
+    #[test]
+    fn test_entry_vec() {
+        let mut m = MultiMap::new();
+        m.insert(1, 42);
+
+        {
+            let mut v = m.entry(1).or_insert_vec(vec![43]);
+            assert_eq!(v, &vec![42]);
+            *v.first_mut().unwrap() = 44;
+        }
+        assert_eq!(m.entry(2).or_insert_vec(vec![666]), &vec![666]);
 
 
-    assert_eq!(m[&1], 44);
-    assert_eq!(m[&2], 666);
+        assert_eq!(m[&1], 44);
+        assert_eq!(m[&2], 666);
+    }
 }
