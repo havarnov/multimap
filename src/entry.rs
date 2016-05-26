@@ -6,19 +6,28 @@
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
 
-use std::collections::hash_map::OccupiedEntry as HashMapOccupiedEntry;
-use std::collections::hash_map::VacantEntry as HashMapVacantEntry;
+use std::collections::hash_map;
 
 /// A view into a single occupied location in a MultiMap.
 pub struct OccupiedEntry<'a, K: 'a, V: 'a> {
-    #[doc(hidden)]
-    pub inner: HashMapOccupiedEntry<'a, K, Vec<V>>,
+    inner: hash_map::OccupiedEntry<'a, K, Vec<V>>,
+}
+
+pub fn occupied_entry<'a, K, V>(e: hash_map::OccupiedEntry<'a, K, Vec<V>>) -> OccupiedEntry<'a, K, V> {
+    OccupiedEntry {
+        inner: e
+    }
 }
 
 /// A view into a single empty location in a MultiMap.
 pub struct VacantEntry<'a, K: 'a, V: 'a> {
-    #[doc(hidden)]
-    pub inner: HashMapVacantEntry<'a, K, Vec<V>>,
+    inner: hash_map::VacantEntry<'a, K, Vec<V>>,
+}
+
+pub fn vacant_entry<'a, K, V>(e: hash_map::VacantEntry<'a, K, Vec<V>>) -> VacantEntry<'a, K, V> {
+    VacantEntry {
+        inner: e
+    }
 }
 
 /// A view into a single location in a map, which may be vacant or occupied.

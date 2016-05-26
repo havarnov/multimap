@@ -65,18 +65,17 @@
 
 use std::borrow::Borrow;
 use std::collections::HashMap;
-use std::collections::hash_map::{Keys, IntoIter};
+use std::collections::hash_map;
 use std::fmt::{self, Debug};
 use std::iter::{Iterator, IntoIterator, FromIterator};
 use std::hash::Hash;
 use std::ops::Index;
 
-pub use std::collections::hash_map::Iter as IterAll;
-pub use std::collections::hash_map::IterMut as IterAllMut;
+mod entry;
 
 pub use entry::{Entry, OccupiedEntry, VacantEntry};
+use entry::{occupied_entry, vacant_entry};
 
-mod entry;
 
 #[derive(Clone)]
 pub struct MultiMap<K, V> {
@@ -358,8 +357,8 @@ impl<K, V> MultiMap<K, V>
     ///     println!("{:?}", key);
     /// }
     /// ```
-    pub fn keys<'a>(&'a self) -> Keys<'a, K, Vec<V>> {
-        self.inner.keys()
+    pub fn keys<'a>(&'a self) -> Keys<'a, K, V> {
+        Keys { inner: self.inner.keys() }
     }
 
     /// An iterator visiting all key-value pairs in arbitrary order. The iterator returns
@@ -431,8 +430,8 @@ impl<K, V> MultiMap<K, V>
     ///     println!("key: {:?}, values: {:?}", key, values);
     /// }
     /// ```
-    pub fn iter_all(&self) -> IterAll<K, Vec<V>> {
-        self.inner.iter()
+    pub fn iter_all(&self) -> IterAll<K, V> {
+        IterAll { inner: self.inner.iter() }
     }
 
     /// An iterator visiting all key-value pairs in arbitrary order. The iterator returns
@@ -460,8 +459,8 @@ impl<K, V> MultiMap<K, V>
     ///     println!("key: {:?}, values: {:?}", key, values);
     /// }
     /// ```
-    pub fn iter_all_mut(&mut self) -> IterAllMut<K, Vec<V>> {
-        self.inner.iter_mut()
+    pub fn iter_all_mut(&mut self) -> IterAllMut<K, V> {
+        IterAllMut { inner: self.inner.iter_mut() }
     }
 
     /// Gets the specified key's corresponding entry in the map for in-place manipulation.
@@ -493,10 +492,9 @@ impl<K, V> MultiMap<K, V>
     /// assert_eq!(m.get_vec(&1), Some(&vec![44, 50]));
     /// ```
     pub fn entry(&mut self, k: K) -> Entry<K, V> {
-        use std::collections::hash_map::Entry as HashMapEntry;
         match self.inner.entry(k) {
-            HashMapEntry::Occupied(entry) => Entry::Occupied(OccupiedEntry { inner: entry }),
-            HashMapEntry::Vacant(entry) => Entry::Vacant(VacantEntry { inner: entry }),
+            hash_map::Entry::Occupied(entry) => Entry::Occupied(occupied_entry(entry)),
+            hash_map::Entry::Vacant(entry) => Entry::Vacant(vacant_entry(entry)),
         }
     }
 }
@@ -571,9 +569,9 @@ impl<'a, K, V> IntoIterator for &'a MultiMap<K, V>
     where K: Eq + Hash
 {
     type Item = (&'a K, &'a Vec<V>);
-    type IntoIter = IterAll<'a, K, Vec<V>>;
+    type IntoIter = IterAll<'a, K, V>;
 
-    fn into_iter(self) -> IterAll<'a, K, Vec<V>> {
+    fn into_iter(self) -> IterAll<'a, K, V> {
         self.iter_all()
     }
 }
@@ -582,10 +580,10 @@ impl<'a, K, V> IntoIterator for &'a mut MultiMap<K, V>
     where K: Eq + Hash
 {
     type Item = (&'a K, &'a mut Vec<V>);
-    type IntoIter = IterAllMut<'a, K, Vec<V>>;
+    type IntoIter = IterAllMut<'a, K, V>;
 
-    fn into_iter(mut self) -> IterAllMut<'a, K, Vec<V>> {
-        self.inner.iter_mut()
+    fn into_iter(mut self) -> IterAllMut<'a, K, V> {
+        self.iter_all_mut()
     }
 }
 
@@ -593,10 +591,10 @@ impl<K, V> IntoIterator for MultiMap<K, V>
     where K: Eq + Hash
 {
     type Item = (K, Vec<V>);
-    type IntoIter = IntoIter<K, Vec<V>>;
+    type IntoIter = IntoIter<K, V>;
 
-    fn into_iter(self) -> IntoIter<K, Vec<V>> {
-        self.inner.into_iter()
+    fn into_iter(self) -> IntoIter<K, V> {
+        IntoIter { inner: self.inner.into_iter() }
     }
 }
 
@@ -647,7 +645,7 @@ impl<'a, K, V> Extend<(&'a K, &'a Vec<V>)> for MultiMap<K, V>
 
 #[derive(Clone)]
 pub struct Iter<'a, K: 'a, V: 'a> {
-    inner: IterAll<'a, K, Vec<V>>,
+    inner: hash_map::Iter<'a, K, Vec<V>>,
 }
 
 impl<'a, K, V> Iterator for Iter<'a, K, V> {
@@ -669,7 +667,7 @@ impl<'a, K, V> ExactSizeIterator for Iter<'a, K, V> {
 }
 
 pub struct IterMut<'a, K: 'a, V: 'a> {
-    inner: IterAllMut<'a, K, Vec<V>>,
+    inner: hash_map::IterMut<'a, K, Vec<V>>,
 }
 
 impl<'a, K, V> Iterator for IterMut<'a, K, V> {
@@ -685,6 +683,96 @@ impl<'a, K, V> Iterator for IterMut<'a, K, V> {
 }
 
 impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+}
+
+#[derive(Clone)]
+pub struct IterAll<'a, K: 'a, V: 'a> {
+    inner: hash_map::Iter<'a, K, Vec<V>>,
+}
+
+impl<'a, K, V> Iterator for IterAll<'a, K, V> {
+    type Item = (&'a K, &'a Vec<V>);
+
+    fn next(&mut self) -> Option<(&'a K, &'a Vec<V>)> {
+        self.inner.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+}
+
+impl<'a, K, V> ExactSizeIterator for IterAll<'a, K, V> {
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+}
+
+pub struct IterAllMut<'a, K: 'a, V: 'a> {
+    inner: hash_map::IterMut<'a, K, Vec<V>>,
+}
+
+impl<'a, K, V> Iterator for IterAllMut<'a, K, V> {
+    type Item = (&'a K, &'a mut Vec<V>);
+
+    fn next(&mut self) -> Option<(&'a K, &'a mut Vec<V>)> {
+        self.inner.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+}
+
+impl<'a, K, V> ExactSizeIterator for IterAllMut<'a, K, V> {
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+}
+
+pub struct IntoIter<K, V> {
+    inner: hash_map::IntoIter<K, Vec<V>>,
+}
+
+impl<K, V> Iterator for IntoIter<K, V> {
+    type Item = (K, Vec<V>);
+
+    fn next(&mut self) -> Option<(K, Vec<V>)> {
+        self.inner.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+}
+
+impl<K, V> ExactSizeIterator for IntoIter<K, V> {
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+}
+
+#[derive(Clone)]
+pub struct Keys<'a, K: 'a, V: 'a> {
+    inner: hash_map::Keys<'a, K, Vec<V>>,
+}
+
+impl<'a, K, V> Iterator for Keys<'a, K, V> {
+    type Item = &'a K;
+
+    fn next(&mut self) -> Option<&'a K> {
+        self.inner.next()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+}
+
+impl<'a, K, V> ExactSizeIterator for Keys<'a, K, V> {
     fn len(&self) -> usize {
         self.inner.len()
     }
