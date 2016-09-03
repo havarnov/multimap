@@ -690,6 +690,38 @@ impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
     }
 }
 
+#[macro_export]
+/// Create a `Multimap` from a list of key value pairs
+///
+/// ## Example
+///
+/// ```
+/// # use multimap::MultiMap;
+/// #[macro_use] extern crate multimap;
+/// # fn main(){
+///
+/// let map = multimap!(
+///     "dog" => "husky",
+///     "dog" => "retreaver",
+///     "dog" => "shiba inu",
+///     "cat" => "cat"
+///     );
+/// # }
+///
+/// ```
+macro_rules! multimap{
+    ($($key:expr => $value:expr),*)=>{
+        {
+            let mut map = MultiMap::new();
+            $(
+                map.insert($key,$value);
+             )*
+            map
+        }
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
@@ -1100,4 +1132,22 @@ mod tests {
         assert_eq!(m[&1], 44);
         assert_eq!(m[&2], 666);
     }
+
+    #[test]
+    fn test_macro(){
+        let mut manual_map = MultiMap::new();
+        manual_map.insert("key1", 42);
+        assert_eq!(manual_map, multimap!("key1" => 42));
+
+        manual_map.insert("key1", 1337);
+        manual_map.insert("key2", 2332);
+        let macro_map = multimap!{
+            "key1" =>    42,
+            "key1" =>  1337,
+            "key2" =>  2332
+        };
+        assert_eq!(manual_map, macro_map);
+    }
+
 }
+
