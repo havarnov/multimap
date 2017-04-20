@@ -77,6 +77,7 @@ pub use std::collections::hash_map::IterMut as IterAllMut;
 pub use entry::{Entry, OccupiedEntry, VacantEntry};
 
 mod entry;
+mod serde;
 
 #[derive(Clone)]
 pub struct MultiMap<K, V> {
@@ -724,6 +725,8 @@ macro_rules! multimap{
 
 #[cfg(test)]
 mod tests {
+    extern crate serde_test;
+
     use std::collections::HashMap;
     use std::iter::FromIterator;
 
@@ -1148,6 +1151,5 @@ mod tests {
         };
         assert_eq!(manual_map, macro_map);
     }
-
 }
 

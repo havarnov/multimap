@@ -7,3 +7,13 @@ repository = "https://github.com/havarnov/multimap"
 license = "MIT/Apache-2.0"
 authors = ["Håvar Nøvik <havar.novik@gmail.com>"]
 documentation = "http://havarnov.github.io/multimap/multimap/index.html"
+
+[features]
+default = ["serde_impl"]
+serde_impl = ["serde"]
+
+[dependencies]
+serde = { version = "~1.0", optional = true }
+
+[dev-dependencies]
+serde_test = "~1.0"
