@@ -730,14 +730,10 @@ macro_rules! multimap{
 
 #[cfg(test)]
 mod tests {
-    extern crate serde_test;
-
     use std::collections::HashMap;
     use std::iter::FromIterator;
 
     use super::*;
-
-    use self::serde_test::{Token, assert_tokens};
 
     #[test]
     fn create() {
@@ -1157,61 +1153,6 @@ mod tests {
             "key2" =>  2332
         };
         assert_eq!(manual_map, macro_map);
-    }
-
-    #[test]
-    fn test_empty() {
-        let map = MultiMap::<char, u8>::new();
-
-        assert_tokens(&map, &[
-            Token::Struct { name: "MultiMap", len: 1 },
-            Token::Str("inner"),
-            Token::Map { len: Some(0) },
-            Token::MapEnd,
-            Token::StructEnd,
-        ]);
-    }
-
-    #[test]
-    fn test_single() {
-        let mut map = MultiMap::<char, u8>::new();
-        map.insert('x', 1);
-
-        assert_tokens(&map, &[
-            Token::Struct { name: "MultiMap", len: 1 },
-            Token::Str("inner"),
-            Token::Map { len: Some(1) },
-            Token::Char('x'),
-            Token::Seq { len: Some(1) },
-            Token::U8(1),
-            Token::SeqEnd,
-            Token::MapEnd,
-            Token::StructEnd,
-        ]);
-    }
-
-    #[test]
-    fn test_multiple() {
-        let mut map = MultiMap::<char, u8>::new();
-        map.insert('x', 1);
-        map.insert('x', 3);
-        map.insert('x', 1);
-        map.insert('x', 5);
-
-        assert_tokens(&map, &[
-            Token::Struct { name: "MultiMap", len: 1 },
-            Token::Str("inner"),
-            Token::Map { len: Some(1) },
-            Token::Char('x'),
-            Token::Seq { len: Some(4) },
-            Token::U8(1),
-            Token::U8(3),
-            Token::U8(1),
-            Token::U8(5),
-            Token::SeqEnd,
-            Token::MapEnd,
-            Token::StructEnd,
-        ]);
     }
 }
 
