@@ -63,6 +63,10 @@
 //! assert_eq!(map.get_vec("key1"), Some(&vec![42, 1337]));
 //! ```
 
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::hash_map::{Keys, IntoIter};
@@ -77,10 +81,11 @@ pub use std::collections::hash_map::IterMut as IterAllMut;
 pub use entry::{Entry, OccupiedEntry, VacantEntry};
 
 mod entry;
-mod serde;
 
-#[derive(Clone)]
-pub struct MultiMap<K, V> {
+#[derive(Clone, Serialize, Deserialize)]
+pub struct MultiMap<K, V>
+    where K: Hash + Eq
+{
     inner: HashMap<K, Vec<V>>,
 }
 
@@ -732,6 +737,8 @@ mod tests {
 
     use super::*;
 
+    use self::serde_test::{Token, assert_tokens};
+
     #[test]
     fn create() {
         let _: MultiMap<usize, usize> = MultiMap { inner: HashMap::new() };
@@ -1150,6 +1157,61 @@ mod tests {
             "key2" =>  2332
         };
         assert_eq!(manual_map, macro_map);
+    }
+
+    #[test]
+    fn test_empty() {
+        let map = MultiMap::<char, u8>::new();
+
+        assert_tokens(&map, &[
+            Token::Struct { name: "MultiMap", len: 1 },
+            Token::Str("inner"),
+            Token::Map { len: Some(0) },
+            Token::MapEnd,
+            Token::StructEnd,
+        ]);
+    }
+
+    #[test]
+    fn test_single() {
+        let mut map = MultiMap::<char, u8>::new();
+        map.insert('x', 1);
+
+        assert_tokens(&map, &[
+            Token::Struct { name: "MultiMap", len: 1 },
+            Token::Str("inner"),
+            Token::Map { len: Some(1) },
+            Token::Char('x'),
+            Token::Seq { len: Some(1) },
+            Token::U8(1),
+            Token::SeqEnd,
+            Token::MapEnd,
+            Token::StructEnd,
+        ]);
+    }
+
+    #[test]
+    fn test_multiple() {
+        let mut map = MultiMap::<char, u8>::new();
+        map.insert('x', 1);
+        map.insert('x', 3);
+        map.insert('x', 1);
+        map.insert('x', 5);
+
+        assert_tokens(&map, &[
+            Token::Struct { name: "MultiMap", len: 1 },
+            Token::Str("inner"),
+            Token::Map { len: Some(1) },
+            Token::Char('x'),
+            Token::Seq { len: Some(4) },
+            Token::U8(1),
+            Token::U8(3),
+            Token::U8(1),
+            Token::U8(5),
+            Token::SeqEnd,
+            Token::MapEnd,
+            Token::StructEnd,
+        ]);
     }
 }
 

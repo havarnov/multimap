@@ -10,10 +10,11 @@ documentation = "http://havarnov.github.io/multimap/multimap/index.html"
 
 [features]
 default = ["serde_impl"]
-serde_impl = ["serde"]
+serde_impl = ["serde", "serde_derive"]
 
 [dependencies]
 serde = { version = "~1.0", optional = true }
+serde_derive = { version = "~1.0", optional = true }
 
 [dev-dependencies]
 serde_test = "~1.0"
