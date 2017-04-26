@@ -8,6 +8,10 @@ license = "MIT/Apache-2.0"
 authors = ["Håvar Nøvik <havar.novik@gmail.com>"]
 documentation = "http://havarnov.github.io/multimap/multimap/index.html"
 
+[features]
+serde_impl = ["serde", "serde_derive"]
+default = ["serde_impl"]
+
 [dependencies]
-serde = "~1.0"
-serde_derive = "~1.0"
+serde = { version = "~1.0", optional = true }
+serde_derive = { version = "~1.0", optional = true }
