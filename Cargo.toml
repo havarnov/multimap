@@ -9,9 +9,11 @@ authors = ["Håvar Nøvik <havar.novik@gmail.com>"]
 documentation = "http://havarnov.github.io/multimap/multimap/index.html"
 
 [features]
-serde_impl = ["serde", "serde_derive"]
+serde_impl = ["serde"]
 default = ["serde_impl"]
 
 [dependencies]
 serde = { version = "~1.0", optional = true }
-serde_derive = { version = "~1.0", optional = true }
+
+[dev-dependencies]
+serde_test = "~1.0"

@@ -63,12 +63,6 @@
 //! assert_eq!(map.get_vec("key1"), Some(&vec![42, 1337]));
 //! ```
 
-#[cfg(feature = "serde_impl")]
-extern crate serde;
-#[cfg(feature = "serde_impl")]
-#[macro_use]
-extern crate serde_derive;
-
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::hash_map::{Keys, IntoIter};
@@ -84,11 +78,11 @@ pub use entry::{Entry, OccupiedEntry, VacantEntry};
 
 mod entry;
 
+#[cfg(feature = "serde_impl")]
+pub mod serde;
+
 #[derive(Clone)]
-#[cfg_attr(feature = "serde_impl", derive(Serialize, Deserialize))]
-pub struct MultiMap<K, V>
-    where K: Hash + Eq
-{
+pub struct MultiMap<K, V> {
     inner: HashMap<K, Vec<V>>,
 }
 
