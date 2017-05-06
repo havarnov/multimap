@@ -78,6 +78,9 @@ pub use entry::{Entry, OccupiedEntry, VacantEntry};
 
 mod entry;
 
+#[cfg(feature = "serde_impl")]
+pub mod serde;
+
 #[derive(Clone)]
 pub struct MultiMap<K, V> {
     inner: HashMap<K, Vec<V>>,
@@ -1148,6 +1151,5 @@ mod tests {
         };
         assert_eq!(manual_map, macro_map);
     }
-
 }
 
