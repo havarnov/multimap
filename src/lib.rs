@@ -170,10 +170,11 @@ impl<K, V> MultiMap<K, V>
     /// let mut map = MultiMap::new();
     /// map.insert(1, 42);
     /// map.insert(2, 1337);
-    /// assert_eq!(map.len(), 2);
+    /// map.insert(2, 1338);
+    /// assert_eq!(map.len(), 3);
     /// ```
     pub fn len(&self) -> usize {
-        self.inner.len()
+        self.inner.values().fold(0, |sum, v| sum+v.len())
     }
 
     /// Removes a key from the map, returning the vector of values at
@@ -1048,7 +1049,7 @@ mod tests {
 
         a.extend(b);
 
-        assert_eq!(a.len(), 2);
+        assert_eq!(a.len(), 3);
         assert_eq!(a.get_vec(&1), Some(&vec![42, 43]));
     }
 
@@ -1063,7 +1064,7 @@ mod tests {
 
         a.extend(&b);
 
-        assert_eq!(a.len(), 2);
+        assert_eq!(a.len(), 3);
         assert_eq!(a.get_vec(&1), Some(&vec![42, 43]));
         assert_eq!(b.len(), 2);
         assert_eq!(b[&1], 43);
@@ -1081,7 +1082,7 @@ mod tests {
 
         a.extend(b);
 
-        assert_eq!(a.len(), 2);
+        assert_eq!(a.len(), 4);
         assert_eq!(a.get_vec(&1), Some(&vec![42, 43, 44]));
     }
 
@@ -1097,9 +1098,9 @@ mod tests {
 
         a.extend(&b);
 
-        assert_eq!(a.len(), 2);
+        assert_eq!(a.len(), 4);
         assert_eq!(a.get_vec(&1), Some(&vec![42, 43, 44]));
-        assert_eq!(b.len(), 2);
+        assert_eq!(b.len(), 3);
         assert_eq!(b.get_vec(&1), Some(&vec![43, 44]));
     }
 
