@@ -694,7 +694,7 @@ impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
 }
 
 #[macro_export]
-/// Create a `Multimap` from a list of key value pairs
+/// Create a `MultiMap` from a list of key value pairs
 ///
 /// ## Example
 ///
