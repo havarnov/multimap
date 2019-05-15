@@ -246,7 +246,7 @@ impl<K, V> MultiMap<K, V>
         where K: Borrow<Q>,
               Q: Eq + Hash
     {
-        self.inner.get_mut(k).map(|mut v| v.get_mut(0).unwrap())
+        self.inner.get_mut(k).map(|v| v.get_mut(0).unwrap())
     }
 
     /// Returns a reference to the vector corresponding to the key.
@@ -502,6 +502,32 @@ impl<K, V> MultiMap<K, V>
             HashMapEntry::Vacant(entry) => Entry::Vacant(VacantEntry { inner: entry }),
         }
     }
+
+    /// Retains only the elements specified by the predicate.
+    ///
+    /// In other words, remove all pairs `(k, v)` such that `f(&k,&mut v)` returns `false`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multimap::MultiMap;
+    ///
+    /// let mut m = MultiMap::new();
+    /// m.insert(1, 42);
+    /// m.insert(1, 99);
+    /// m.insert(2, 42);
+    /// m.retain(|&k, &v| { k == 1 && v == 42 });
+    /// assert_eq!(1, m.len());
+    /// assert_eq!(Some(&42), m.get(&1));
+    /// ```
+    pub fn retain<F>(&mut self, mut f: F)
+        where F: FnMut(&K, &V) -> bool
+    {
+        for (key, mut vector) in &mut self.inner {
+            vector.retain(|ref value| f(key, value));
+        }
+        self.inner.retain(|&_, ref v| !v.is_empty());
+    }
 }
 
 impl<'a, K, V, Q: ?Sized> Index<&'a Q> for MultiMap<K, V>
@@ -587,7 +613,7 @@ impl<'a, K, V> IntoIterator for &'a mut MultiMap<K, V>
     type Item = (&'a K, &'a mut Vec<V>);
     type IntoIter = IterAllMut<'a, K, Vec<V>>;
 
-    fn into_iter(mut self) -> IterAllMut<'a, K, Vec<V>> {
+    fn into_iter(self) -> IterAllMut<'a, K, Vec<V>> {
         self.inner.iter_mut()
     }
 }
@@ -1109,7 +1135,7 @@ mod tests {
         m.insert(1, 42);
 
         {
-            let mut v = m.entry(1).or_insert(43);
+            let v = m.entry(1).or_insert(43);
             assert_eq!(v, &42);
             *v = 44;
         }
@@ -1125,7 +1151,7 @@ mod tests {
         m.insert(1, 42);
 
         {
-            let mut v = m.entry(1).or_insert_vec(vec![43]);
+            let v = m.entry(1).or_insert_vec(vec![43]);
             assert_eq!(v, &vec![42]);
             *v.first_mut().unwrap() = 44;
         }
@@ -1150,6 +1176,27 @@ mod tests {
             "key2" =>  2332
         };
         assert_eq!(manual_map, macro_map);
+    }
+
+    #[test]
+    fn retain_removes_element() {
+        let mut m = MultiMap::new();
+        m.insert(1, 42);
+        m.insert(1, 99);
+        m.retain(|&k, &v| { k == 1 && v == 42 });
+        assert_eq!(1, m.len());
+        assert_eq!(Some(&42), m.get(&1));
+    }
+
+    #[test]
+    fn retain_also_removes_empty_vector() {
+        let mut m = MultiMap::new();
+        m.insert(1, 42);
+        m.insert(1, 99);
+        m.insert(2, 42);
+        m.retain(|&k, &v| { k == 1 && v == 42 });
+        assert_eq!(1, m.len());
+        assert_eq!(Some(&42), m.get(&1));
     }
 }
 
