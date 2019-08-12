@@ -553,7 +553,7 @@ impl<K, V> MultiMap<K, V>
     pub fn retain<F>(&mut self, mut f: F)
         where F: FnMut(&K, &V) -> bool
     {
-        for (key, mut vector) in &mut self.inner {
+        for (key, vector) in &mut self.inner {
             vector.retain(|ref value| f(key, value));
         }
         self.inner.retain(|&_, ref v| !v.is_empty());
