@@ -297,6 +297,36 @@ impl<K, V> MultiMap<K, V>
         self.inner.get_mut(k)
     }
 
+    /// Returns true if the key is multi-valued.
+    ///
+    /// The key may be any borrowed form of the map's key type, but Hash and Eq
+    /// on the borrowed form must match those for the key type.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multimap::MultiMap;
+    ///
+    /// let mut map = MultiMap::new();
+    /// map.insert(1, 42);
+    /// map.insert(1, 1337);
+    /// map.insert(2, 2332);
+    ///
+    /// assert_eq!(map.is_vec(&1), true);   // key is multi-valued
+    /// assert_eq!(map.is_vec(&2), false);  // key is single-valued
+    /// assert_eq!(map.is_vec(&3), false);  // key not in map
+    /// ```
+    pub fn is_vec<Q: ?Sized>(&self, k: &Q) -> bool
+        where K: Borrow<Q>,
+              Q: Eq + Hash
+    {
+        match self.get_vec(k) {
+            Some(val) => { val.len() > 1 }
+            None => false
+        }
+    }
+
+
     /// Returns the number of elements the map can hold without reallocating.
     ///
     /// # Examples
@@ -1160,6 +1190,18 @@ mod tests {
 
         assert_eq!(m[&1], 44);
         assert_eq!(m[&2], 666);
+    }
+
+    #[test]
+    fn test_is_vec() {
+        let mut m = MultiMap::new();
+        m.insert(1, 42);
+        m.insert(1, 1337);
+        m.insert(2, 2332);
+
+        assert!(m.is_vec(&1));
+        assert!(!m.is_vec(&2));
+        assert!(!m.is_vec(&3));
     }
 
     #[test]
