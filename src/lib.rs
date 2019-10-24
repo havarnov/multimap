@@ -120,6 +120,40 @@ impl<K, V, S> MultiMap<K, V, S>
     where K: Eq + Hash,
           S: BuildHasher,
 {
+    /// Creates an empty MultiMap which will use the given hash builder to hash keys.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multimap::MultiMap;
+    /// use std::collections::hash_map::RandomState;
+    ///
+    /// let s = RandomState::new();
+    /// let mut map: MultiMap<&str, isize> = MultiMap::with_hasher(s);
+    /// ```
+    pub fn with_hasher(hash_builder: S) -> MultiMap<K, V, S> {
+        MultiMap {
+            inner: HashMap::with_hasher(hash_builder)
+        }
+    }
+
+    /// Creates an empty MultiMap with the given intial capacity and hash builder.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multimap::MultiMap;
+    /// use std::collections::hash_map::RandomState;
+    ///
+    /// let s = RandomState::new();
+    /// let mut map: MultiMap<&str, isize> = MultiMap::with_capacity_and_hasher(20, s);
+    /// ```
+    pub fn with_capacity_and_hasher(capacity: usize, hash_builder: S) -> MultiMap<K, V, S> {
+        MultiMap {
+            inner: HashMap::with_capacity_and_hasher(capacity, hash_builder)
+        }
+    }
+
     /// Inserts a key-value pair into the multimap. If the key does exists in
     /// the map then the key is pushed to that key's vector. If the key doesn't
     /// exists in the map a new vector with the given value is inserted.
