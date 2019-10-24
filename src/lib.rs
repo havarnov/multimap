@@ -65,10 +65,10 @@
 
 use std::borrow::Borrow;
 use std::collections::HashMap;
-use std::collections::hash_map::{Keys, IntoIter};
+use std::collections::hash_map::{Keys, IntoIter, RandomState};
 use std::fmt::{self, Debug};
 use std::iter::{Iterator, IntoIterator, FromIterator};
-use std::hash::Hash;
+use std::hash::{Hash, BuildHasher};
 use std::ops::Index;
 
 pub use std::collections::hash_map::Iter as IterAll;
@@ -82,8 +82,8 @@ mod entry;
 pub mod serde;
 
 #[derive(Clone)]
-pub struct MultiMap<K, V> {
-    inner: HashMap<K, Vec<V>>,
+pub struct MultiMap<K, V, S = RandomState> {
+    inner: HashMap<K, Vec<V>, S>,
 }
 
 impl<K, V> MultiMap<K, V>
@@ -114,7 +114,12 @@ impl<K, V> MultiMap<K, V>
     pub fn with_capacity(capacity: usize) -> MultiMap<K, V> {
         MultiMap { inner: HashMap::with_capacity(capacity) }
     }
+}
 
+impl<K, V, S> MultiMap<K, V, S>
+    where K: Eq + Hash,
+          S: BuildHasher,
+{
     /// Inserts a key-value pair into the multimap. If the key does exists in
     /// the map then the key is pushed to that key's vector. If the key doesn't
     /// exists in the map a new vector with the given value is inserted.
@@ -574,9 +579,10 @@ impl<'a, K, V, Q: ?Sized> Index<&'a Q> for MultiMap<K, V>
     }
 }
 
-impl<K, V> Debug for MultiMap<K, V>
+impl<K, V, S> Debug for MultiMap<K, V, S>
     where K: Eq + Hash + Debug,
-          V: Debug
+          V: Debug,
+          S: BuildHasher
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_map().entries(self.iter_all()).finish()
@@ -602,10 +608,11 @@ impl<K, V> Eq for MultiMap<K, V>
 {
 }
 
-impl<K, V> Default for MultiMap<K, V>
-    where K: Eq + Hash
+impl<K, V, S> Default for MultiMap<K, V, S>
+    where K: Eq + Hash,
+          S: BuildHasher + Default
 {
-    fn default() -> MultiMap<K, V> {
+    fn default() -> MultiMap<K, V, S> {
         MultiMap { inner: Default::default() }
     }
 }
