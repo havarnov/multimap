@@ -869,7 +869,7 @@ mod tests {
     }
 
     #[test]
-#[should_panic]
+    #[should_panic]
     fn index_no_entry() {
         let m: MultiMap<usize, usize> = MultiMap::new();
         &m[&1];
