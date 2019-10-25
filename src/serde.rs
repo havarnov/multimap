@@ -11,7 +11,7 @@
 extern crate serde;
 
 use std::fmt;
-use std::hash::Hash;
+use std::hash::{Hash, BuildHasher};
 use std::marker::PhantomData;
 
 use self::serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -20,9 +20,10 @@ use self::serde::de::{MapAccess, Visitor};
 use MultiMap;
 
 
-impl<K, V> Serialize for MultiMap<K, V>
+impl<K, V, BS> Serialize for MultiMap<K, V, BS>
     where K: Serialize + Eq + Hash,
-          V: Serialize
+          V: Serialize,
+          BS: BuildHasher
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: Serializer
@@ -31,7 +32,7 @@ impl<K, V> Serialize for MultiMap<K, V>
     }
 }
 
-impl<K, V> MultiMapVisitor<K, V>
+impl<K, V, S> MultiMapVisitor<K, V, S>
     where K: Hash + Eq
 {
     fn new() -> Self {
@@ -41,15 +42,16 @@ impl<K, V> MultiMapVisitor<K, V>
     }
 }
 
-struct MultiMapVisitor<K, V> {
-    marker: PhantomData<MultiMap<K, V>>
+struct MultiMapVisitor<K, V, S> {
+    marker: PhantomData<MultiMap<K, V, S>>
 }
 
-impl<'a, K, V> Visitor<'a> for MultiMapVisitor<K, V>
+impl<'a, K, V, S> Visitor<'a> for MultiMapVisitor<K, V, S>
     where K: Deserialize<'a> + Eq + Hash,
-          V: Deserialize<'a>
+          V: Deserialize<'a>,
+          S: BuildHasher + Default
 {
-    type Value = MultiMap<K, V>;
+    type Value = MultiMap<K, V, S>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("expected a map")
@@ -58,7 +60,7 @@ impl<'a, K, V> Visitor<'a> for MultiMapVisitor<K, V>
     fn visit_map<M>(self, mut visitor: M) -> Result<Self::Value, M::Error>
         where M: MapAccess<'a>
     {
-        let mut values = MultiMap::with_capacity(visitor.size_hint().unwrap_or(0));
+        let mut values = MultiMap::with_capacity_and_hasher(visitor.size_hint().unwrap_or(0), S::default());
 
         while let Some((key, value)) = visitor.next_entry()? {
             values.inner.insert(key, value);
@@ -68,14 +70,15 @@ impl<'a, K, V> Visitor<'a> for MultiMapVisitor<K, V>
     }
 }
 
-impl<'a, K, V> Deserialize<'a> for MultiMap<K, V>
+impl<'a, K, V, S> Deserialize<'a> for MultiMap<K, V, S>
     where K: Deserialize<'a> + Eq + Hash,
-          V: Deserialize<'a>
+          V: Deserialize<'a>,
+          S: BuildHasher + Default
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where D: Deserializer<'a>
     {
-        deserializer.deserialize_map(MultiMapVisitor::<K, V>::new())
+        deserializer.deserialize_map(MultiMapVisitor::<K, V, S>::new())
     }
 }
 

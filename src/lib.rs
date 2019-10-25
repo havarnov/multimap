@@ -65,10 +65,10 @@
 
 use std::borrow::Borrow;
 use std::collections::HashMap;
-use std::collections::hash_map::{Keys, IntoIter};
+use std::collections::hash_map::{Keys, IntoIter, RandomState};
 use std::fmt::{self, Debug};
 use std::iter::{Iterator, IntoIterator, FromIterator};
-use std::hash::Hash;
+use std::hash::{Hash, BuildHasher};
 use std::ops::Index;
 
 pub use std::collections::hash_map::Iter as IterAll;
@@ -82,8 +82,8 @@ mod entry;
 pub mod serde;
 
 #[derive(Clone)]
-pub struct MultiMap<K, V> {
-    inner: HashMap<K, Vec<V>>,
+pub struct MultiMap<K, V, S = RandomState> {
+    inner: HashMap<K, Vec<V>, S>,
 }
 
 impl<K, V> MultiMap<K, V>
@@ -113,6 +113,45 @@ impl<K, V> MultiMap<K, V>
     /// ```
     pub fn with_capacity(capacity: usize) -> MultiMap<K, V> {
         MultiMap { inner: HashMap::with_capacity(capacity) }
+    }
+}
+
+impl<K, V, S> MultiMap<K, V, S>
+    where K: Eq + Hash,
+          S: BuildHasher,
+{
+    /// Creates an empty MultiMap which will use the given hash builder to hash keys.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multimap::MultiMap;
+    /// use std::collections::hash_map::RandomState;
+    ///
+    /// let s = RandomState::new();
+    /// let mut map: MultiMap<&str, isize> = MultiMap::with_hasher(s);
+    /// ```
+    pub fn with_hasher(hash_builder: S) -> MultiMap<K, V, S> {
+        MultiMap {
+            inner: HashMap::with_hasher(hash_builder)
+        }
+    }
+
+    /// Creates an empty MultiMap with the given intial capacity and hash builder.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multimap::MultiMap;
+    /// use std::collections::hash_map::RandomState;
+    ///
+    /// let s = RandomState::new();
+    /// let mut map: MultiMap<&str, isize> = MultiMap::with_capacity_and_hasher(20, s);
+    /// ```
+    pub fn with_capacity_and_hasher(capacity: usize, hash_builder: S) -> MultiMap<K, V, S> {
+        MultiMap {
+            inner: HashMap::with_capacity_and_hasher(capacity, hash_builder)
+        }
     }
 
     /// Inserts a key-value pair into the multimap. If the key does exists in
@@ -560,9 +599,10 @@ impl<K, V> MultiMap<K, V>
     }
 }
 
-impl<'a, K, V, Q: ?Sized> Index<&'a Q> for MultiMap<K, V>
+impl<'a, K, V, S, Q: ?Sized> Index<&'a Q> for MultiMap<K, V, S>
     where K: Eq + Hash + Borrow<Q>,
-          Q: Eq + Hash
+          Q: Eq + Hash,
+          S: BuildHasher,
 {
     type Output = V;
 
@@ -574,20 +614,22 @@ impl<'a, K, V, Q: ?Sized> Index<&'a Q> for MultiMap<K, V>
     }
 }
 
-impl<K, V> Debug for MultiMap<K, V>
+impl<K, V, S> Debug for MultiMap<K, V, S>
     where K: Eq + Hash + Debug,
-          V: Debug
+          V: Debug,
+          S: BuildHasher
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_map().entries(self.iter_all()).finish()
     }
 }
 
-impl<K, V> PartialEq for MultiMap<K, V>
+impl<K, V, S> PartialEq for MultiMap<K, V, S>
     where K: Eq + Hash,
-          V: PartialEq
+          V: PartialEq,
+          S: BuildHasher
 {
-    fn eq(&self, other: &MultiMap<K, V>) -> bool {
+    fn eq(&self, other: &MultiMap<K, V, S>) -> bool {
         if self.len() != other.len() {
             return false;
         }
@@ -596,28 +638,31 @@ impl<K, V> PartialEq for MultiMap<K, V>
     }
 }
 
-impl<K, V> Eq for MultiMap<K, V>
+impl<K, V, S> Eq for MultiMap<K, V, S>
     where K: Eq + Hash,
-          V: Eq
+          V: Eq,
+          S: BuildHasher
 {
 }
 
-impl<K, V> Default for MultiMap<K, V>
-    where K: Eq + Hash
+impl<K, V, S> Default for MultiMap<K, V, S>
+    where K: Eq + Hash,
+          S: BuildHasher + Default
 {
-    fn default() -> MultiMap<K, V> {
+    fn default() -> MultiMap<K, V, S> {
         MultiMap { inner: Default::default() }
     }
 }
 
-impl<K, V> FromIterator<(K, V)> for MultiMap<K, V>
-    where K: Eq + Hash
+impl<K, V, S> FromIterator<(K, V)> for MultiMap<K, V, S>
+    where K: Eq + Hash,
+          S: BuildHasher + Default
 {
-    fn from_iter<T: IntoIterator<Item = (K, V)>>(iterable: T) -> MultiMap<K, V> {
+    fn from_iter<T: IntoIterator<Item = (K, V)>>(iterable: T) -> MultiMap<K, V, S> {
         let iter = iterable.into_iter();
         let hint = iter.size_hint().0;
 
-        let mut multimap = MultiMap::with_capacity(hint);
+        let mut multimap = MultiMap::with_capacity_and_hasher(hint, S::default());
         for (k, v) in iter {
             multimap.insert(k, v);
         }
@@ -626,8 +671,9 @@ impl<K, V> FromIterator<(K, V)> for MultiMap<K, V>
     }
 }
 
-impl<'a, K, V> IntoIterator for &'a MultiMap<K, V>
-    where K: Eq + Hash
+impl<'a, K, V, S> IntoIterator for &'a MultiMap<K, V, S>
+    where K: Eq + Hash,
+          S: BuildHasher
 {
     type Item = (&'a K, &'a Vec<V>);
     type IntoIter = IterAll<'a, K, Vec<V>>;
@@ -637,8 +683,9 @@ impl<'a, K, V> IntoIterator for &'a MultiMap<K, V>
     }
 }
 
-impl<'a, K, V> IntoIterator for &'a mut MultiMap<K, V>
-    where K: Eq + Hash
+impl<'a, K, V, S> IntoIterator for &'a mut MultiMap<K, V, S>
+    where K: Eq + Hash,
+          S: BuildHasher
 {
     type Item = (&'a K, &'a mut Vec<V>);
     type IntoIter = IterAllMut<'a, K, Vec<V>>;
@@ -648,8 +695,9 @@ impl<'a, K, V> IntoIterator for &'a mut MultiMap<K, V>
     }
 }
 
-impl<K, V> IntoIterator for MultiMap<K, V>
-    where K: Eq + Hash
+impl<K, V, S> IntoIterator for MultiMap<K, V, S>
+    where K: Eq + Hash,
+          S: BuildHasher
 {
     type Item = (K, Vec<V>);
     type IntoIter = IntoIter<K, Vec<V>>;
@@ -659,8 +707,9 @@ impl<K, V> IntoIterator for MultiMap<K, V>
     }
 }
 
-impl<K, V> Extend<(K, V)> for MultiMap<K, V>
-    where K: Eq + Hash
+impl<K, V, S> Extend<(K, V)> for MultiMap<K, V, S>
+    where K: Eq + Hash,
+          S: BuildHasher
 {
     fn extend<T: IntoIterator<Item = (K, V)>>(&mut self, iter: T) {
         for (k, v) in iter {
@@ -669,17 +718,19 @@ impl<K, V> Extend<(K, V)> for MultiMap<K, V>
     }
 }
 
-impl<'a, K, V> Extend<(&'a K, &'a V)> for MultiMap<K, V>
+impl<'a, K, V, S> Extend<(&'a K, &'a V)> for MultiMap<K, V, S>
     where K: Eq + Hash + Copy,
-          V: Copy
+          V: Copy,
+          S: BuildHasher
 {
     fn extend<T: IntoIterator<Item = (&'a K, &'a V)>>(&mut self, iter: T) {
         self.extend(iter.into_iter().map(|(&key, &value)| (key, value)));
     }
 }
 
-impl<K, V> Extend<(K, Vec<V>)> for MultiMap<K, V>
-    where K: Eq + Hash
+impl<K, V, S> Extend<(K, Vec<V>)> for MultiMap<K, V, S>
+    where K: Eq + Hash,
+          S: BuildHasher
 {
     fn extend<T: IntoIterator<Item = (K, Vec<V>)>>(&mut self, iter: T) {
         for (k, values) in iter {
@@ -695,9 +746,10 @@ impl<K, V> Extend<(K, Vec<V>)> for MultiMap<K, V>
     }
 }
 
-impl<'a, K, V> Extend<(&'a K, &'a Vec<V>)> for MultiMap<K, V>
+impl<'a, K, V, S> Extend<(&'a K, &'a Vec<V>)> for MultiMap<K, V, S>
     where K: Eq + Hash + Copy,
-          V: Copy
+          V: Copy,
+          S: BuildHasher
 {
     fn extend<T: IntoIterator<Item = (&'a K, &'a Vec<V>)>>(&mut self, iter: T) {
         self.extend(iter.into_iter().map(|(&key, values)| (key, values.to_owned())));
