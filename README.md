@@ -32,7 +32,7 @@ fn main () {
 ### 0.7.0
 
 * Added possibility to replace the default hasher for the underlying ```HashMap```.
-* Fix build warning by removing a unnecessary ```mut```.
+* Fix build warning by removing an unnecessary ```mut```.
 
 ## License
 
