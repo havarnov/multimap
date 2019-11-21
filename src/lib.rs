@@ -154,9 +154,9 @@ impl<K, V, S> MultiMap<K, V, S>
         }
     }
 
-    /// Inserts a key-value pair into the multimap. If the key does exists in
-    /// the map then the key is pushed to that key's vector. If the key doesn't
-    /// exists in the map a new vector with the given value is inserted.
+    /// Inserts a key-value pair into the multimap. If the key does exist in
+    /// the map then the value is pushed to that key's vector. If the key doesn't
+    /// exist in the map a new vector with the given value is inserted.
     ///
     /// # Examples
     ///
@@ -173,6 +173,59 @@ impl<K, V, S> MultiMap<K, V, S>
             }
             Entry::Vacant(entry) => {
                 entry.insert_vec(vec![v]);
+            }
+        }
+    }
+
+    /// Inserts multiple key-value pairs into the multimap. If the key does exist in
+    /// the map then the values are extended into that key's vector. If the key
+    /// doesn't exist in the map a new vector collected from the given values is inserted.
+    ///
+    /// This may be more efficient than inserting values independently.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multimap::MultiMap;
+    ///
+    /// let mut map = MultiMap::<&str, &usize>::new();
+    /// map.insert_many("key", &[42, 43]);
+    /// ```
+    pub fn insert_many<I: IntoIterator<Item = V>>(&mut self, k: K, v: I) {
+        match self.entry(k) {
+            Entry::Occupied(mut entry) => {
+                entry.get_vec_mut().extend(v);
+            }
+            Entry::Vacant(entry) => {
+                entry.insert_vec(v.into_iter().collect::<Vec<_>>());
+            }
+        }
+    }
+
+    /// Inserts multiple key-value pairs into the multimap. If the key does exist in
+    /// the map then the values are extended into that key's vector. If the key
+    /// doesn't exist in the map a new vector collected from the given values is inserted.
+    ///
+    /// This may be more efficient than inserting values independently.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multimap::MultiMap;
+    ///
+    /// let mut map = MultiMap::<&str, usize>::new();
+    /// map.insert_many_from_slice("key", &[42, 43]);
+    /// ```
+    pub fn insert_many_from_slice(&mut self, k: K, v: &[V])
+    where
+        V: Clone,
+    {
+        match self.entry(k) {
+            Entry::Occupied(mut entry) => {
+                entry.get_vec_mut().extend_from_slice(v);
+            }
+            Entry::Vacant(entry) => {
+                entry.insert_vec(v.to_vec());
             }
         }
     }
@@ -859,6 +912,36 @@ mod tests {
     fn insert() {
         let mut m: MultiMap<usize, usize> = MultiMap::new();
         m.insert(1, 3);
+    }
+
+    #[test]
+    fn insert_many() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert_many(1, vec![3, 4]);
+        assert_eq!(Some(&vec![3, 4]), m.get_vec(&1));
+    }
+
+    #[test]
+    fn insert_many_again() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 2);
+        m.insert_many(1, vec![3, 4]);
+        assert_eq!(Some(&vec![2, 3, 4]), m.get_vec(&1));
+    }
+
+    #[test]
+    fn insert_many_from_slice() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert_many_from_slice(1, &[3, 4]);
+        assert_eq!(Some(&vec![3, 4]), m.get_vec(&1));
+    }
+
+    #[test]
+    fn insert_many_from_slice_again() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 2);
+        m.insert_many_from_slice(1, &[3, 4]);
+        assert_eq!(Some(&vec![2, 3, 4]), m.get_vec(&1));
     }
 
     #[test]
