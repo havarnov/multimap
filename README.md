@@ -34,6 +34,11 @@ fn main () {
 * Added possibility to replace the default hasher for the underlying ```HashMap```.
 * Fix build warning by removing an unnecessary ```mut```.
 
+### 0.8.0
+
+* Added MultiMap::insert_many
+* Added MultiMap::insert_many_from_slice
+
 ## License
 
 Licensed under either of
