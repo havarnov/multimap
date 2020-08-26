@@ -29,6 +29,10 @@ fn main () {
 
 ## Changelog
 
+### 0.8.2
+
+* Added ```#![forbid(unsafe_code)]```.
+
 ### 0.8.1
 
 * Fixed wrong link to documentation in Crago.toml.
