@@ -1,3 +1,4 @@
+#![forbid(unsafe_code)]
 // Copyright (c) 2016 multimap developers
 //
 // Licensed under the Apache License, Version 2.0
