@@ -35,12 +35,12 @@ fn main () {
 
 ### 0.8.1
 
-* Fixed wrong link to documentation in Crago.toml.
+* Fixed wrong link to documentation in Cargo.toml.
 
 ### 0.8.0
 
-* Added MultiMap::insert_many
-* Added MultiMap::insert_many_from_slice
+* Added ```MultiMap::insert_many```
+* Added ```MultiMap::insert_many_from_slice```
 
 ### 0.7.0
 
