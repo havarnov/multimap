@@ -875,9 +875,12 @@ impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
 ///
 /// ```
 macro_rules! multimap{
-    ($($key:expr => $value:expr),*)=>{
+    (@replace_with_unit $_t:tt) => { () };
+    (@count $($key:expr),*) => { <[()]>::len(&[$($crate::multimap! { @replace_with_unit $key }),*]) };
+    
+    ($($key:expr => $value:expr),* $(,)?)=>{
         {
-            let mut map = MultiMap::new();
+            let mut map = $crate::MultiMap::with_capacity($crate::multimap! { @count $($key),* });
             $(
                 map.insert($key,$value);
              )*
