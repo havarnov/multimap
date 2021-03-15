@@ -29,6 +29,10 @@ fn main () {
 
 ## Changelog
 
+### 0.8.3
+
+* multimap! marco fixes; allow trailing comma, naming hygiene and create with enough capacity for all elements.
+
 ### 0.8.2
 
 * Added ```#![forbid(unsafe_code)]```.
