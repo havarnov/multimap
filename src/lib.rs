@@ -290,15 +290,70 @@ where
     /// let mut map = MultiMap::new();
     /// map.insert(1, 42);
     /// map.insert(1, 1337);
-    /// assert_eq!(map.remove(&1), Some(vec![42, 1337]));
-    /// assert_eq!(map.remove(&1), None);
+    /// assert_eq!(map.remove_all(&1), Some(vec![42, 1337]));
+    /// assert_eq!(map.remove_all(&1), None);
     /// ```
-    pub fn remove<Q: ?Sized>(&mut self, k: &Q) -> Option<Vec<V>>
+    pub fn remove_all<Q: ?Sized>(&mut self, k: &Q) -> Option<Vec<V>>
     where
         K: Borrow<Q>,
         Q: Eq + Hash,
     {
         self.inner.remove(k)
+    }
+
+    /// Removes the first item in the vector corresponding to the key from the map.
+    ///
+    /// The key may be any borrowed form of the map's key type, but Hash and Eq
+    /// on the borrowed form must match those for the key type.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multimap::MultiMap;
+    ///
+    /// let mut map = MultiMap::new();
+    /// map.insert(1, 42);
+    /// map.insert(1, 1337);
+    /// assert_eq!(map.remove_first(&1), Some(42));
+    /// assert_eq!(map.remove_first(&1), Some(1337));
+    /// assert_eq!(map.remove_first(&1), None);
+    /// ```
+    pub fn remove_first<Q: ?Sized>(&mut self, k: &Q) -> Option<V>
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
+    {
+        let vec = self.get_vec_mut(k)?;
+        if vec.is_empty() {
+            None
+        } else {
+            Some(vec.remove(0))
+        }
+    }
+
+    /// Removes the last item in the vector corresponding to the key from the map.
+    ///
+    /// The key may be any borrowed form of the map's key type, but Hash and Eq
+    /// on the borrowed form must match those for the key type.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multimap::MultiMap;
+    ///
+    /// let mut map = MultiMap::new();
+    /// map.insert(1, 42);
+    /// map.insert(1, 1337);
+    /// assert_eq!(map.remove_last(&1), Some(1337));
+    /// assert_eq!(map.remove_last(&1), Some(42));
+    /// assert_eq!(map.remove_last(&1), None);
+    /// ```
+    pub fn remove_last<Q: ?Sized>(&mut self, k: &Q) -> Option<V>
+    where
+        K: Borrow<Q>,
+        Q: Hash + Eq,
+    {
+        self.get_vec_mut(k)?.pop()
     }
 
     /// Returns a reference to the first item in the vector corresponding to
@@ -1030,17 +1085,47 @@ mod tests {
     }
 
     #[test]
-    fn remove_not_present() {
+    fn remove_last_not_present() {
         let mut m: MultiMap<usize, usize> = MultiMap::new();
-        let v = m.remove(&1);
+        let v = m.remove_last(&1);
         assert_eq!(v, None);
     }
 
     #[test]
-    fn remove_present() {
+    fn remove_last_present() {
         let mut m: MultiMap<usize, usize> = MultiMap::new();
         m.insert(1, 42);
-        let v = m.remove(&1);
+        let v = m.remove_last(&1);
+        assert_eq!(v, Some(42));
+    }
+
+    #[test]
+    fn remove_first_not_present() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        let v = m.remove_first(&1);
+        assert_eq!(v, None);
+    }
+
+    #[test]
+    fn remove_first_present() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        let v = m.remove_first(&1);
+        assert_eq!(v, Some(42));
+    }
+
+    #[test]
+    fn remove_all_not_present() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        let v = m.remove_all(&1);
+        assert_eq!(v, None);
+    }
+
+    #[test]
+    fn remove_all_present() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        let v = m.remove_all(&1);
         assert_eq!(v, Some(vec![42]));
     }
 
