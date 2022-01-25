@@ -11,45 +11,48 @@
 extern crate serde;
 
 use std::fmt;
-use std::hash::{Hash, BuildHasher};
+use std::hash::{BuildHasher, Hash};
 use std::marker::PhantomData;
 
-use self::serde::{Deserialize, Deserializer, Serialize, Serializer};
 use self::serde::de::{MapAccess, Visitor};
+use self::serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use MultiMap;
 
-
 impl<K, V, BS> Serialize for MultiMap<K, V, BS>
-    where K: Serialize + Eq + Hash,
-          V: Serialize,
-          BS: BuildHasher
+where
+    K: Serialize + Eq + Hash,
+    V: Serialize,
+    BS: BuildHasher,
 {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         self.inner.serialize(serializer)
     }
 }
 
 impl<K, V, S> MultiMapVisitor<K, V, S>
-    where K: Hash + Eq
+where
+    K: Hash + Eq,
 {
     fn new() -> Self {
         MultiMapVisitor {
-            marker: PhantomData
+            marker: PhantomData,
         }
     }
 }
 
 struct MultiMapVisitor<K, V, S> {
-    marker: PhantomData<MultiMap<K, V, S>>
+    marker: PhantomData<MultiMap<K, V, S>>,
 }
 
 impl<'a, K, V, S> Visitor<'a> for MultiMapVisitor<K, V, S>
-    where K: Deserialize<'a> + Eq + Hash,
-          V: Deserialize<'a>,
-          S: BuildHasher + Default
+where
+    K: Deserialize<'a> + Eq + Hash,
+    V: Deserialize<'a>,
+    S: BuildHasher + Default,
 {
     type Value = MultiMap<K, V, S>;
 
@@ -58,9 +61,11 @@ impl<'a, K, V, S> Visitor<'a> for MultiMapVisitor<K, V, S>
     }
 
     fn visit_map<M>(self, mut visitor: M) -> Result<Self::Value, M::Error>
-        where M: MapAccess<'a>
+    where
+        M: MapAccess<'a>,
     {
-        let mut values = MultiMap::with_capacity_and_hasher(visitor.size_hint().unwrap_or(0), S::default());
+        let mut values =
+            MultiMap::with_capacity_and_hasher(visitor.size_hint().unwrap_or(0), S::default());
 
         while let Some((key, value)) = visitor.next_entry()? {
             values.inner.insert(key, value);
@@ -71,24 +76,25 @@ impl<'a, K, V, S> Visitor<'a> for MultiMapVisitor<K, V, S>
 }
 
 impl<'a, K, V, S> Deserialize<'a> for MultiMap<K, V, S>
-    where K: Deserialize<'a> + Eq + Hash,
-          V: Deserialize<'a>,
-          S: BuildHasher + Default
+where
+    K: Deserialize<'a> + Eq + Hash,
+    V: Deserialize<'a>,
+    S: BuildHasher + Default,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where D: Deserializer<'a>
+    where
+        D: Deserializer<'a>,
     {
         deserializer.deserialize_map(MultiMapVisitor::<K, V, S>::new())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
 
     extern crate serde_test;
 
-    use self::serde_test::{Token, assert_tokens};
+    use self::serde_test::{assert_tokens, Token};
 
     use super::*;
 
@@ -96,10 +102,7 @@ mod tests {
     fn test_empty() {
         let map = MultiMap::<char, u8>::new();
 
-        assert_tokens(&map, &[
-            Token::Map { len: Some(0) },
-            Token::MapEnd,
-        ]);
+        assert_tokens(&map, &[Token::Map { len: Some(0) }, Token::MapEnd]);
     }
 
     #[test]
@@ -107,14 +110,17 @@ mod tests {
         let mut map = MultiMap::<char, u8>::new();
         map.insert('x', 1);
 
-        assert_tokens(&map, &[
-            Token::Map { len: Some(1) },
-            Token::Char('x'),
-            Token::Seq { len: Some(1) },
-            Token::U8(1),
-            Token::SeqEnd,
-            Token::MapEnd,
-        ]);
+        assert_tokens(
+            &map,
+            &[
+                Token::Map { len: Some(1) },
+                Token::Char('x'),
+                Token::Seq { len: Some(1) },
+                Token::U8(1),
+                Token::SeqEnd,
+                Token::MapEnd,
+            ],
+        );
     }
 
     #[test]
@@ -125,16 +131,19 @@ mod tests {
         map.insert('x', 1);
         map.insert('x', 5);
 
-        assert_tokens(&map, &[
-            Token::Map { len: Some(1) },
-            Token::Char('x'),
-            Token::Seq { len: Some(4) },
-            Token::U8(1),
-            Token::U8(3),
-            Token::U8(1),
-            Token::U8(5),
-            Token::SeqEnd,
-            Token::MapEnd,
-        ]);
+        assert_tokens(
+            &map,
+            &[
+                Token::Map { len: Some(1) },
+                Token::Char('x'),
+                Token::Seq { len: Some(4) },
+                Token::U8(1),
+                Token::U8(3),
+                Token::U8(1),
+                Token::U8(5),
+                Token::SeqEnd,
+                Token::MapEnd,
+            ],
+        );
     }
 }
