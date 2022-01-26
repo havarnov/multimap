@@ -93,7 +93,6 @@ impl<'a, K: 'a, V: 'a> VacantEntry<'a, K, V> {
     }
 }
 
-
 impl<'a, K: 'a, V: 'a> Entry<'a, K, V> {
     /// Ensures a value is in the entry by inserting the default if empty, and returns
     /// a mutable reference to the value in the entry. This will return a mutable reference to the

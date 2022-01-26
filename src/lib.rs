@@ -65,11 +65,11 @@
 //! ```
 
 use std::borrow::Borrow;
+use std::collections::hash_map::{IntoIter, Keys, RandomState};
 use std::collections::HashMap;
-use std::collections::hash_map::{Keys, IntoIter, RandomState};
 use std::fmt::{self, Debug};
-use std::iter::{Iterator, IntoIterator, FromIterator};
-use std::hash::{Hash, BuildHasher};
+use std::hash::{BuildHasher, Hash};
+use std::iter::{FromIterator, IntoIterator, Iterator};
 use std::ops::Index;
 
 pub use std::collections::hash_map::Iter as IterAll;
@@ -88,7 +88,8 @@ pub struct MultiMap<K, V, S = RandomState> {
 }
 
 impl<K, V> MultiMap<K, V>
-    where K: Eq + Hash
+where
+    K: Eq + Hash,
 {
     /// Creates an empty MultiMap
     ///
@@ -100,7 +101,9 @@ impl<K, V> MultiMap<K, V>
     /// let mut map: MultiMap<&str, isize> = MultiMap::new();
     /// ```
     pub fn new() -> MultiMap<K, V> {
-        MultiMap { inner: HashMap::new() }
+        MultiMap {
+            inner: HashMap::new(),
+        }
     }
 
     /// Creates an empty multimap with the given initial capacity.
@@ -113,13 +116,16 @@ impl<K, V> MultiMap<K, V>
     /// let mut map: MultiMap<&str, isize> = MultiMap::with_capacity(20);
     /// ```
     pub fn with_capacity(capacity: usize) -> MultiMap<K, V> {
-        MultiMap { inner: HashMap::with_capacity(capacity) }
+        MultiMap {
+            inner: HashMap::with_capacity(capacity),
+        }
     }
 }
 
 impl<K, V, S> MultiMap<K, V, S>
-    where K: Eq + Hash,
-          S: BuildHasher,
+where
+    K: Eq + Hash,
+    S: BuildHasher,
 {
     /// Creates an empty MultiMap which will use the given hash builder to hash keys.
     ///
@@ -134,7 +140,7 @@ impl<K, V, S> MultiMap<K, V, S>
     /// ```
     pub fn with_hasher(hash_builder: S) -> MultiMap<K, V, S> {
         MultiMap {
-            inner: HashMap::with_hasher(hash_builder)
+            inner: HashMap::with_hasher(hash_builder),
         }
     }
 
@@ -151,7 +157,7 @@ impl<K, V, S> MultiMap<K, V, S>
     /// ```
     pub fn with_capacity_and_hasher(capacity: usize, hash_builder: S) -> MultiMap<K, V, S> {
         MultiMap {
-            inner: HashMap::with_capacity_and_hasher(capacity, hash_builder)
+            inner: HashMap::with_capacity_and_hasher(capacity, hash_builder),
         }
     }
 
@@ -247,8 +253,9 @@ impl<K, V, S> MultiMap<K, V, S>
     /// assert_eq!(map.contains_key(&2), false);
     /// ```
     pub fn contains_key<Q: ?Sized>(&self, k: &Q) -> bool
-        where K: Borrow<Q>,
-              Q: Eq + Hash
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
     {
         self.inner.contains_key(k)
     }
@@ -287,8 +294,9 @@ impl<K, V, S> MultiMap<K, V, S>
     /// assert_eq!(map.remove(&1), None);
     /// ```
     pub fn remove<Q: ?Sized>(&mut self, k: &Q) -> Option<Vec<V>>
-        where K: Borrow<Q>,
-              Q: Eq + Hash
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
     {
         self.inner.remove(k)
     }
@@ -310,8 +318,9 @@ impl<K, V, S> MultiMap<K, V, S>
     /// assert_eq!(map.get(&1), Some(&42));
     /// ```
     pub fn get<Q: ?Sized>(&self, k: &Q) -> Option<&V>
-        where K: Borrow<Q>,
-              Q: Eq + Hash
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
     {
         self.inner.get(k).map(|v| &v[0])
     }
@@ -336,8 +345,9 @@ impl<K, V, S> MultiMap<K, V, S>
     /// assert_eq!(map[&1], 99);
     /// ```
     pub fn get_mut<Q: ?Sized>(&mut self, k: &Q) -> Option<&mut V>
-        where K: Borrow<Q>,
-              Q: Eq + Hash
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
     {
         self.inner.get_mut(k).map(|v| v.get_mut(0).unwrap())
     }
@@ -358,8 +368,9 @@ impl<K, V, S> MultiMap<K, V, S>
     /// assert_eq!(map.get_vec(&1), Some(&vec![42, 1337]));
     /// ```
     pub fn get_vec<Q: ?Sized>(&self, k: &Q) -> Option<&Vec<V>>
-        where K: Borrow<Q>,
-              Q: Eq + Hash
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
     {
         self.inner.get(k)
     }
@@ -384,8 +395,9 @@ impl<K, V, S> MultiMap<K, V, S>
     /// assert_eq!(map.get_vec(&1), Some(&vec![1991, 2332]));
     /// ```
     pub fn get_vec_mut<Q: ?Sized>(&mut self, k: &Q) -> Option<&mut Vec<V>>
-        where K: Borrow<Q>,
-              Q: Eq + Hash
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
     {
         self.inner.get_mut(k)
     }
@@ -410,15 +422,15 @@ impl<K, V, S> MultiMap<K, V, S>
     /// assert_eq!(map.is_vec(&3), false);  // key not in map
     /// ```
     pub fn is_vec<Q: ?Sized>(&self, k: &Q) -> bool
-        where K: Borrow<Q>,
-              Q: Eq + Hash
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
     {
         match self.get_vec(k) {
-            Some(val) => { val.len() > 1 }
-            None => false
+            Some(val) => val.len() > 1,
+            None => false,
         }
     }
-
 
     /// Returns the number of elements the map can hold without reallocating.
     ///
@@ -484,7 +496,7 @@ impl<K, V, S> MultiMap<K, V, S>
     ///     println!("{:?}", key);
     /// }
     /// ```
-    pub fn keys<'a>(&'a self) -> Keys<'a, K, Vec<V>> {
+    pub fn keys(&'_ self) -> Keys<'_, K, Vec<V>> {
         self.inner.keys()
     }
 
@@ -508,7 +520,9 @@ impl<K, V, S> MultiMap<K, V, S>
     /// }
     /// ```
     pub fn iter(&self) -> Iter<K, V> {
-        Iter { inner: self.inner.iter() }
+        Iter {
+            inner: self.inner.iter(),
+        }
     }
 
     /// An iterator visiting all key-value pairs in arbitrary order. The iterator returns
@@ -535,7 +549,9 @@ impl<K, V, S> MultiMap<K, V, S>
     /// }
     /// ```
     pub fn iter_mut(&mut self) -> IterMut<K, V> {
-        IterMut { inner: self.inner.iter_mut() }
+        IterMut {
+            inner: self.inner.iter_mut(),
+        }
     }
 
     /// An iterator visiting all key-value pairs in arbitrary order. The iterator returns
@@ -644,19 +660,21 @@ impl<K, V, S> MultiMap<K, V, S>
     /// assert_eq!(Some(&42), m.get(&1));
     /// ```
     pub fn retain<F>(&mut self, mut f: F)
-        where F: FnMut(&K, &V) -> bool
+    where
+        F: FnMut(&K, &V) -> bool,
     {
         for (key, vector) in &mut self.inner {
-            vector.retain(|ref value| f(key, value));
+            vector.retain(|value| f(key, value));
         }
         self.inner.retain(|&_, ref v| !v.is_empty());
     }
 }
 
 impl<'a, K, V, S, Q: ?Sized> Index<&'a Q> for MultiMap<K, V, S>
-    where K: Eq + Hash + Borrow<Q>,
-          Q: Eq + Hash,
-          S: BuildHasher,
+where
+    K: Eq + Hash + Borrow<Q>,
+    Q: Eq + Hash,
+    S: BuildHasher,
 {
     type Output = V;
 
@@ -669,9 +687,10 @@ impl<'a, K, V, S, Q: ?Sized> Index<&'a Q> for MultiMap<K, V, S>
 }
 
 impl<K, V, S> Debug for MultiMap<K, V, S>
-    where K: Eq + Hash + Debug,
-          V: Debug,
-          S: BuildHasher
+where
+    K: Eq + Hash + Debug,
+    V: Debug,
+    S: BuildHasher,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_map().entries(self.iter_all()).finish()
@@ -679,38 +698,45 @@ impl<K, V, S> Debug for MultiMap<K, V, S>
 }
 
 impl<K, V, S> PartialEq for MultiMap<K, V, S>
-    where K: Eq + Hash,
-          V: PartialEq,
-          S: BuildHasher
+where
+    K: Eq + Hash,
+    V: PartialEq,
+    S: BuildHasher,
 {
     fn eq(&self, other: &MultiMap<K, V, S>) -> bool {
         if self.len() != other.len() {
             return false;
         }
 
-        self.iter_all().all(|(key, value)| other.get_vec(key).map_or(false, |v| *value == *v))
+        self.iter_all()
+            .all(|(key, value)| other.get_vec(key).map_or(false, |v| *value == *v))
     }
 }
 
 impl<K, V, S> Eq for MultiMap<K, V, S>
-    where K: Eq + Hash,
-          V: Eq,
-          S: BuildHasher
+where
+    K: Eq + Hash,
+    V: Eq,
+    S: BuildHasher,
 {
 }
 
 impl<K, V, S> Default for MultiMap<K, V, S>
-    where K: Eq + Hash,
-          S: BuildHasher + Default
+where
+    K: Eq + Hash,
+    S: BuildHasher + Default,
 {
     fn default() -> MultiMap<K, V, S> {
-        MultiMap { inner: Default::default() }
+        MultiMap {
+            inner: Default::default(),
+        }
     }
 }
 
 impl<K, V, S> FromIterator<(K, V)> for MultiMap<K, V, S>
-    where K: Eq + Hash,
-          S: BuildHasher + Default
+where
+    K: Eq + Hash,
+    S: BuildHasher + Default,
 {
     fn from_iter<T: IntoIterator<Item = (K, V)>>(iterable: T) -> MultiMap<K, V, S> {
         let iter = iterable.into_iter();
@@ -726,8 +752,9 @@ impl<K, V, S> FromIterator<(K, V)> for MultiMap<K, V, S>
 }
 
 impl<'a, K, V, S> IntoIterator for &'a MultiMap<K, V, S>
-    where K: Eq + Hash,
-          S: BuildHasher
+where
+    K: Eq + Hash,
+    S: BuildHasher,
 {
     type Item = (&'a K, &'a Vec<V>);
     type IntoIter = IterAll<'a, K, Vec<V>>;
@@ -738,8 +765,9 @@ impl<'a, K, V, S> IntoIterator for &'a MultiMap<K, V, S>
 }
 
 impl<'a, K, V, S> IntoIterator for &'a mut MultiMap<K, V, S>
-    where K: Eq + Hash,
-          S: BuildHasher
+where
+    K: Eq + Hash,
+    S: BuildHasher,
 {
     type Item = (&'a K, &'a mut Vec<V>);
     type IntoIter = IterAllMut<'a, K, Vec<V>>;
@@ -750,8 +778,9 @@ impl<'a, K, V, S> IntoIterator for &'a mut MultiMap<K, V, S>
 }
 
 impl<K, V, S> IntoIterator for MultiMap<K, V, S>
-    where K: Eq + Hash,
-          S: BuildHasher
+where
+    K: Eq + Hash,
+    S: BuildHasher,
 {
     type Item = (K, Vec<V>);
     type IntoIter = IntoIter<K, Vec<V>>;
@@ -762,8 +791,9 @@ impl<K, V, S> IntoIterator for MultiMap<K, V, S>
 }
 
 impl<K, V, S> Extend<(K, V)> for MultiMap<K, V, S>
-    where K: Eq + Hash,
-          S: BuildHasher
+where
+    K: Eq + Hash,
+    S: BuildHasher,
 {
     fn extend<T: IntoIterator<Item = (K, V)>>(&mut self, iter: T) {
         for (k, v) in iter {
@@ -773,9 +803,10 @@ impl<K, V, S> Extend<(K, V)> for MultiMap<K, V, S>
 }
 
 impl<'a, K, V, S> Extend<(&'a K, &'a V)> for MultiMap<K, V, S>
-    where K: Eq + Hash + Copy,
-          V: Copy,
-          S: BuildHasher
+where
+    K: Eq + Hash + Copy,
+    V: Copy,
+    S: BuildHasher,
 {
     fn extend<T: IntoIterator<Item = (&'a K, &'a V)>>(&mut self, iter: T) {
         self.extend(iter.into_iter().map(|(&key, &value)| (key, value)));
@@ -783,8 +814,9 @@ impl<'a, K, V, S> Extend<(&'a K, &'a V)> for MultiMap<K, V, S>
 }
 
 impl<K, V, S> Extend<(K, Vec<V>)> for MultiMap<K, V, S>
-    where K: Eq + Hash,
-          S: BuildHasher
+where
+    K: Eq + Hash,
+    S: BuildHasher,
 {
     fn extend<T: IntoIterator<Item = (K, Vec<V>)>>(&mut self, iter: T) {
         for (k, values) in iter {
@@ -801,12 +833,16 @@ impl<K, V, S> Extend<(K, Vec<V>)> for MultiMap<K, V, S>
 }
 
 impl<'a, K, V, S> Extend<(&'a K, &'a Vec<V>)> for MultiMap<K, V, S>
-    where K: Eq + Hash + Copy,
-          V: Copy,
-          S: BuildHasher
+where
+    K: Eq + Hash + Copy,
+    V: Copy,
+    S: BuildHasher,
 {
     fn extend<T: IntoIterator<Item = (&'a K, &'a Vec<V>)>>(&mut self, iter: T) {
-        self.extend(iter.into_iter().map(|(&key, values)| (key, values.to_owned())));
+        self.extend(
+            iter.into_iter()
+                .map(|(&key, values)| (key, values.to_owned())),
+        );
     }
 }
 
@@ -877,7 +913,7 @@ impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
 macro_rules! multimap{
     (@replace_with_unit $_t:tt) => { () };
     (@count $($key:expr),*) => { <[()]>::len(&[$($crate::multimap! { @replace_with_unit $key }),*]) };
-    
+
     ($($key:expr => $value:expr),* $(,)?)=>{
         {
             let mut map = $crate::MultiMap::with_capacity($crate::multimap! { @count $($key),* });
@@ -889,7 +925,6 @@ macro_rules! multimap{
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
@@ -899,7 +934,9 @@ mod tests {
 
     #[test]
     fn create() {
-        let _: MultiMap<usize, usize> = MultiMap { inner: HashMap::new() };
+        let _: MultiMap<usize, usize> = MultiMap {
+            inner: HashMap::new(),
+        };
     }
 
     #[test]
@@ -959,7 +996,7 @@ mod tests {
     #[should_panic]
     fn index_no_entry() {
         let m: MultiMap<usize, usize> = MultiMap::new();
-        &m[&1];
+        let _ = &m[&1];
     }
 
     #[test]
@@ -980,7 +1017,7 @@ mod tests {
     #[test]
     fn contains_key_false() {
         let m: MultiMap<usize, usize> = MultiMap::new();
-        assert_eq!(m.contains_key(&1), false);
+        assert!(!m.contains_key(&1));
     }
 
     #[test]
@@ -1043,14 +1080,14 @@ mod tests {
     #[test]
     fn is_empty_true() {
         let m: MultiMap<usize, usize> = MultiMap::new();
-        assert_eq!(m.is_empty(), true);
+        assert!(m.is_empty());
     }
 
     #[test]
     fn is_empty_false() {
         let mut m: MultiMap<usize, usize> = MultiMap::new();
         m.insert(1, 42);
-        assert_eq!(m.is_empty(), false);
+        assert!(!m.is_empty());
     }
 
     #[test]
@@ -1326,7 +1363,6 @@ mod tests {
         }
         assert_eq!(m.entry(2).or_insert_vec(vec![666]), &vec![666]);
 
-
         assert_eq!(m[&1], 44);
         assert_eq!(m[&2], 666);
     }
@@ -1344,14 +1380,14 @@ mod tests {
     }
 
     #[test]
-    fn test_macro(){
+    fn test_macro() {
         let mut manual_map = MultiMap::new();
         manual_map.insert("key1", 42);
         assert_eq!(manual_map, multimap!("key1" => 42));
 
         manual_map.insert("key1", 1337);
         manual_map.insert("key2", 2332);
-        let macro_map = multimap!{
+        let macro_map = multimap! {
             "key1" =>    42,
             "key1" =>  1337,
             "key2" =>  2332
@@ -1364,7 +1400,7 @@ mod tests {
         let mut m = MultiMap::new();
         m.insert(1, 42);
         m.insert(1, 99);
-        m.retain(|&k, &v| { k == 1 && v == 42 });
+        m.retain(|&k, &v| k == 1 && v == 42);
         assert_eq!(1, m.len());
         assert_eq!(Some(&42), m.get(&1));
     }
@@ -1375,9 +1411,8 @@ mod tests {
         m.insert(1, 42);
         m.insert(1, 99);
         m.insert(2, 42);
-        m.retain(|&k, &v| { k == 1 && v == 42 });
+        m.retain(|&k, &v| k == 1 && v == 42);
         assert_eq!(1, m.len());
         assert_eq!(Some(&42), m.get(&1));
     }
 }
-
