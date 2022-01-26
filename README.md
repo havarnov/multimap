@@ -5,7 +5,7 @@
 # Multimap implementation for Rust
 
 This is a multimap implementation for Rust. Implemented as a thin wrapper around
-std::collections::HashMap.
+`std::collections::HashMap`.
 
 ## Example
 
@@ -31,7 +31,7 @@ fn main () {
 
 ### 0.8.3
 
-* multimap! marco fixes; allow trailing comma, naming hygiene and create with enough capacity for all elements.
+* `multimap!` macro fixes; allow trailing comma, naming hygiene and create with enough capacity for all elements.
 
 ### 0.8.2
 
@@ -39,7 +39,7 @@ fn main () {
 
 ### 0.8.1
 
-* Fixed wrong link to documentation in Cargo.toml.
+* Fixed wrong link to documentation in `Cargo.toml`.
 
 ### 0.8.0
 
