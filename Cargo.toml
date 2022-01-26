@@ -9,6 +9,7 @@ authors = ["Håvar Nøvik <havar.novik@gmail.com>"]
 documentation = "https://docs.rs/multimap/"
 exclude = [
     ".travis.yml",
+    ".github/**",
     ".gitignore",
 ]
 
