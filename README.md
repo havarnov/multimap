@@ -1,4 +1,3 @@
-[![Travis Build Status](https://travis-ci.org/havarnov/multimap.svg?branch=master)](https://travis-ci.org/havarnov/multimap)
 [![crates.io](http://meritbadge.herokuapp.com/multimap)](https://crates.io/crates/multimap)
 [![docs.rs](https://docs.rs/multimap/badge.svg)](https://docs.rs/multimap/)
 
