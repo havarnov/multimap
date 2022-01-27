@@ -290,10 +290,10 @@ where
     /// let mut map = MultiMap::new();
     /// map.insert(1, 42);
     /// map.insert(1, 1337);
-    /// assert_eq!(map.remove_all(&1), Some(vec![42, 1337]));
-    /// assert_eq!(map.remove_all(&1), None);
+    /// assert_eq!(map.remove(&1), Some(vec![42, 1337]));
+    /// assert_eq!(map.remove(&1), None);
     /// ```
-    pub fn remove_all<Q: ?Sized>(&mut self, k: &Q) -> Option<Vec<V>>
+    pub fn remove<Q: ?Sized>(&mut self, k: &Q) -> Option<Vec<V>>
     where
         K: Borrow<Q>,
         Q: Eq + Hash,
@@ -1115,17 +1115,17 @@ mod tests {
     }
 
     #[test]
-    fn remove_all_not_present() {
+    fn remove_not_present() {
         let mut m: MultiMap<usize, usize> = MultiMap::new();
-        let v = m.remove_all(&1);
+        let v = m.remove(&1);
         assert_eq!(v, None);
     }
 
     #[test]
-    fn remove_all_present() {
+    fn remove_present() {
         let mut m: MultiMap<usize, usize> = MultiMap::new();
         m.insert(1, 42);
-        let v = m.remove_all(&1);
+        let v = m.remove(&1);
         assert_eq!(v, Some(vec![42]));
     }
 
