@@ -495,7 +495,7 @@ where
     /// use multimap::MultiMap;
     ///
     /// let map: MultiMap<usize, usize> = MultiMap::new();
-    /// assert!(map.capacity() >= 0);
+    /// assert!(map.capacity() >= 0 as usize);
     /// ```
     pub fn capacity(&self) -> usize {
         self.inner.capacity()
