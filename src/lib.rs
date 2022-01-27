@@ -325,9 +325,18 @@ where
     {
         let vec = self.get_vec_mut(k)?;
         if vec.is_empty() {
+            // We shouldn't ever reach this branch but handle it for sanity
+            self.remove(k);
             None
         } else {
-            Some(vec.remove(0))
+            let item = vec.remove(0);
+
+            // If the entry vec is completely empty we can remove it
+            if vec.is_empty() {
+                self.remove(k);
+            }
+
+            Some(item)
         }
     }
 
@@ -353,7 +362,15 @@ where
         K: Borrow<Q>,
         Q: Hash + Eq,
     {
-        self.get_vec_mut(k)?.pop()
+        let vec = self.get_vec_mut(k)?;
+        let item = vec.pop();
+
+        // If the entry vec is completely empty we can remove it
+        if vec.is_empty() {
+            self.remove(k);
+        }
+
+        item
     }
 
     /// Returns a reference to the first item in the vector corresponding to
