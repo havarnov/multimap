@@ -554,6 +554,32 @@ where
         }
     }
 
+    /// An iterator over values by given key.
+    pub fn iter_key<Q: ?Sized>(&self, key: &Q) -> IterKey<V>
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
+    {
+        IterKey(if let Some(x) = self.inner.get(key) {
+            Box::new(x.iter())
+        } else {
+            Box::new(std::iter::empty())
+        })
+    }
+
+    /// An mutable iterator over values by given key.
+    pub fn iter_key_mut<Q: ?Sized>(&mut self, key: &Q) -> IterKeyMut<V>
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
+    {
+        IterKeyMut(if let Some(x) = self.inner.get_mut(key) {
+            Box::new(x.iter_mut())
+        } else {
+            Box::new(std::iter::empty())
+        })
+    }
+
     /// An iterator visiting all key-value pairs in arbitrary order. The iterator returns
     /// a reference to the key and the corresponding key's vector.
     /// Iterator element type is (&'a K, &'a V).
@@ -891,6 +917,26 @@ impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
     }
 }
 
+pub struct IterKey<'a, V: 'a>(Box<dyn Iterator<Item = &'a V> + 'a>);
+
+impl<'a, V> Iterator for IterKey<'a, V> {
+    type Item = &'a V;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
+    }
+}
+
+pub struct IterKeyMut<'a, V: 'a>(Box<dyn Iterator<Item = &'a mut V> + 'a>);
+
+impl<'a, V> Iterator for IterKeyMut<'a, V> {
+    type Item = &'a mut V;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
+    }
+}
+
 #[macro_export]
 /// Create a `MultiMap` from a list of key value pairs
 ///
@@ -1149,6 +1195,21 @@ mod tests {
         for _ in iter.by_ref().take(2) {}
 
         assert_eq!(iter.len(), 1);
+    }
+
+    #[test]
+    fn test_iter_key() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        m.insert(1, 43);
+        m.insert(4, 44);
+        m.insert(8, 45);
+
+        let mut iter = m.iter_key(&1);
+
+        assert_eq!(iter.next(), Some(&42));
+        assert_eq!(iter.next(), Some(&43));
+        assert_eq!(iter.next(), None);
     }
 
     #[test]

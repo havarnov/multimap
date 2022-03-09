@@ -28,6 +28,10 @@ fn main () {
 
 ## Changelog
 
+### 0.8.4
+
+* Added iterator over values by given key.
+
 ### 0.8.3
 
 * `multimap!` macro fixes; allow trailing comma, naming hygiene and create with enough capacity for all elements.
