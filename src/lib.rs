@@ -957,6 +957,14 @@ mod tests {
     }
 
     #[test]
+    fn insert_identical() {
+        let mut m = MultiMap::new();
+        m.insert(1, 42);
+        m.insert(1, 42);
+        assert_eq!(m.get_vec(&1), Some(&vec![42, 42]));
+    }
+
+    #[test]
     fn insert_many() {
         let mut m: MultiMap<usize, usize> = MultiMap::new();
         m.insert_many(1, vec![3, 4]);
@@ -969,6 +977,14 @@ mod tests {
         m.insert(1, 2);
         m.insert_many(1, vec![3, 4]);
         assert_eq!(Some(&vec![2, 3, 4]), m.get_vec(&1));
+    }
+
+    #[test]
+    fn insert_many_overlap() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert_many(1, vec![2, 3]);
+        m.insert_many(1, vec![3, 4]);
+        assert_eq!(Some(&vec![2, 3, 3, 4]), m.get_vec(&1));
     }
 
     #[test]
@@ -991,6 +1007,7 @@ mod tests {
         let mut m: MultiMap<usize, usize> = MultiMap::new();
         m.insert(1, 3);
         m.insert(1, 4);
+        assert_eq!(Some(&vec![3, 4]), m.get_vec(&1));
     }
 
     #[test]
@@ -1249,6 +1266,19 @@ mod tests {
         m2.insert(3, 4);
         assert!(m1 != m2);
         m1.insert(3, 4);
+        assert_eq!(m1, m2);
+    }
+
+    #[test]
+    fn test_eq_empty_key() {
+        let mut m1 = MultiMap::new();
+        m1.insert(1, 2);
+        m1.insert(2, 3);
+        let mut m2 = MultiMap::new();
+        m2.insert(1, 2);
+        m2.insert_many(2, []);
+        assert_ne!(m1, m2);
+        m2.insert_many(2, [3]);
         assert_eq!(m1, m2);
     }
 
