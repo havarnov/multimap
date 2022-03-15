@@ -489,12 +489,13 @@ where
     ///
     /// let mut map = MultiMap::new();
     /// map.insert(1,42);
+    /// map.insert(1,1337);
     /// map.insert(2,1337);
     /// map.insert(4,1991);
     ///
-    /// for key in map.keys() {
-    ///     println!("{:?}", key);
-    /// }
+    /// let mut keys: Vec<_> = map.keys().collect();
+    /// keys.sort();
+    /// assert_eq!(keys, [&1, &2, &4]);
     /// ```
     pub fn keys(&'_ self) -> Keys<'_, K, Vec<V>> {
         self.inner.keys()
@@ -515,9 +516,9 @@ where
     /// map.insert(3,2332);
     /// map.insert(4,1991);
     ///
-    /// for (key, value) in map.iter() {
-    ///     println!("key: {:?}, val: {:?}", key, value);
-    /// }
+    /// let mut pairs: Vec<_> = map.iter().collect();
+    /// pairs.sort_by_key(|p| p.0);
+    /// assert_eq!(pairs, [(&1, &42), (&3, &2332), (&4, &1991)]);
     /// ```
     pub fn iter(&self) -> Iter<K, V> {
         Iter {
@@ -544,9 +545,9 @@ where
     ///     *value *= *value;
     /// }
     ///
-    /// for (key, value) in map.iter() {
-    ///     println!("key: {:?}, val: {:?}", key, value);
-    /// }
+    /// let mut pairs: Vec<_> = map.iter_mut().collect();
+    /// pairs.sort_by_key(|p| p.0);
+    /// assert_eq!(pairs, [(&1, &mut 1764), (&3, &mut 5438224), (&4, &mut 3964081)]);
     /// ```
     pub fn iter_mut(&mut self) -> IterMut<K, V> {
         IterMut {
@@ -569,9 +570,9 @@ where
     /// map.insert(3,2332);
     /// map.insert(4,1991);
     ///
-    /// for (key, values) in map.iter_all() {
-    ///     println!("key: {:?}, values: {:?}", key, values);
-    /// }
+    /// let mut pairs: Vec<_> = map.iter_all().collect();
+    /// pairs.sort_by_key(|p| p.0);
+    /// assert_eq!(pairs, [(&1, &vec![42, 1337]), (&3, &vec![2332]), (&4, &vec![1991])]);
     /// ```
     pub fn iter_all(&self) -> IterAll<K, Vec<V>> {
         self.inner.iter()
@@ -598,9 +599,9 @@ where
     ///     }
     /// }
     ///
-    /// for (key, values) in map.iter_all() {
-    ///     println!("key: {:?}, values: {:?}", key, values);
-    /// }
+    /// let mut pairs: Vec<_> = map.iter_all_mut().collect();
+    /// pairs.sort_by_key(|p| p.0);
+    /// assert_eq!(pairs, [(&1, &mut vec![99, 99]), (&3, &mut vec![99]), (&4, &mut vec![99])]);
     /// ```
     pub fn iter_all_mut(&mut self) -> IterAllMut<K, Vec<V>> {
         self.inner.iter_mut()
