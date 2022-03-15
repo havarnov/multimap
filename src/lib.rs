@@ -324,7 +324,7 @@ where
         K: Borrow<Q>,
         Q: Eq + Hash,
     {
-        self.inner.get(k).map(|v| &v[0])
+        self.inner.get(k)?.get(0)
     }
 
     /// Returns a mutable reference to the first item in the vector corresponding to
@@ -351,7 +351,7 @@ where
         K: Borrow<Q>,
         Q: Eq + Hash,
     {
-        self.inner.get_mut(k).map(|v| v.get_mut(0).unwrap())
+        self.inner.get_mut(k)?.get_mut(0)
     }
 
     /// Returns a reference to the vector corresponding to the key.
@@ -1078,6 +1078,14 @@ mod tests {
     }
 
     #[test]
+    fn get_empty() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        m.get_vec_mut(&1).and_then(Vec::pop);
+        assert_eq!(m.get(&1), None);
+    }
+
+    #[test]
     fn get_vec_not_present() {
         let m: MultiMap<usize, usize> = MultiMap::new();
         assert_eq!(m.get_vec(&1), None);
@@ -1138,6 +1146,14 @@ mod tests {
             (*v)[1] = 10;
         }
         assert_eq!(m.get_vec(&1), Some(&vec![5, 10]))
+    }
+
+    #[test]
+    fn get_mut_empty() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        m.get_vec_mut(&1).and_then(Vec::pop);
+        assert_eq!(m.get_mut(&1), None);
     }
 
     #[test]
