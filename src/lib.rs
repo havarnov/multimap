@@ -667,7 +667,7 @@ where
         for (key, vector) in &mut self.inner {
             vector.retain(|value| f(key, value));
         }
-        self.inner.retain(|&_, ref v| !v.is_empty());
+        self.inner.retain(|_, v| !v.is_empty());
     }
 }
 
@@ -1260,11 +1260,11 @@ mod tests {
         let mut m2 = MultiMap::new();
         m2.insert(1, 2);
         m2.insert(2, 3);
-        assert!(m1 != m2);
+        assert_ne!(m1, m2);
         m2.insert(3, 4);
         assert_eq!(m1, m2);
         m2.insert(3, 4);
-        assert!(m1 != m2);
+        assert_ne!(m1, m2);
         m1.insert(3, 4);
         assert_eq!(m1, m2);
     }
