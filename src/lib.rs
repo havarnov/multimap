@@ -631,7 +631,7 @@ where
     ///     assert_eq!(v, &vec![44]);
     ///     v.push(50);
     /// }
-    /// assert_eq!(m.entry(2).or_insert_vec(vec![666]), &vec![666]);
+    /// assert_eq!(m.entry(2).or_insert_vec(vec![667]), &vec![666]);
     ///
     /// assert_eq!(m.get_vec(&1), Some(&vec![44, 50]));
     /// ```
