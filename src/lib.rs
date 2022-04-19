@@ -628,11 +628,8 @@ where
     ///     println!("key: {:?}, val: {:?}", key, value);
     /// }
     /// ```
-    pub fn flat_iter(&self) -> FlatIter<K, V> {
-        FlatIter {
-            inner: self.inner.iter(),
-            inner_iter: None,
-        }
+    pub fn flat_iter(&self) -> impl Iterator<Item = (&K, &V)> {
+        self.iter_all().flat_map(|(k, v)| v.into_iter().map(move |i| (k, i)))
     }
 
     /// An iterator visiting all key-value pairs in arbitrary order. The iterator returns
@@ -654,11 +651,8 @@ where
     ///     println!("key: {:?}, val: {:?}", key, value);
     /// }
     /// ```
-    pub fn flat_iter_mut(&mut self) -> FlatIterMut<K, V> {
-        FlatIterMut {
-            inner: self.inner.iter_mut(),
-            inner_iter: None,
-        }
+    pub fn flat_iter_mut(&mut self) -> impl Iterator<Item = (&K, &mut V)> {
+        self.iter_all_mut().flat_map(|(k, v)| v.into_iter().map(move |i| (k, i)))
     }
 
     /// Gets the specified key's corresponding entry in the map for in-place manipulation.
@@ -943,63 +937,6 @@ impl<'a, K, V> Iterator for IterMut<'a, K, V> {
 impl<'a, K, V> ExactSizeIterator for IterMut<'a, K, V> {
     fn len(&self) -> usize {
         self.inner.len()
-    }
-}
-
-#[derive(Clone)]
-pub struct FlatIter<'a, K: 'a, V: 'a> {
-    inner: IterAll<'a, K, Vec<V>>,
-    inner_iter: Option<(&'a K, std::slice::Iter<'a, V>)>,
-}
-
-impl<'a, K, V> Iterator for FlatIter<'a, K, V> {
-    type Item = (&'a K, &'a V);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some((ref k, ref mut iter)) = self.inner_iter {
-            match iter.next() {
-                Some(v) => return Some((k, v)),
-                None => self.inner_iter = None,
-            }
-        }
-        match self.inner.next() {
-            Some((k, vec)) if vec.len() == 1 => Some((k, &vec[0])),
-            Some((k, vec)) => {
-                let mut iter = vec.iter();
-                let v = iter.next().unwrap();
-                self.inner_iter = Some((k, iter));
-                Some((k, v))
-            },
-            _ => None,
-        }
-    }
-}
-
-pub struct FlatIterMut<'a, K: 'a, V: 'a> {
-    inner: IterAllMut<'a, K, Vec<V>>,
-    inner_iter: Option<(&'a K, std::slice::IterMut<'a, V>)>,
-}
-
-impl<'a, K, V> Iterator for FlatIterMut<'a, K, V> {
-    type Item = (&'a K, &'a mut V);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some((ref k, ref mut iter)) = self.inner_iter {
-            match iter.next() {
-                Some(v) => return Some((k, v)),
-                None => self.inner_iter = None,
-            }
-        }
-        match self.inner.next() {
-            Some((k, vec)) if vec.len() == 1 => Some((k, &mut vec[0])),
-            Some((k, vec)) => {
-                let mut iter = vec.iter_mut();
-                let v = iter.next().unwrap();
-                self.inner_iter = Some((k, iter));
-                Some((k, v))
-            },
-            _ => None,
-        }
     }
 }
 
