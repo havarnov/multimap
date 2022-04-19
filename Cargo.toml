@@ -18,6 +18,7 @@ default = ["serde_impl"]
 
 [dependencies]
 serde = { version = "~1.0", optional = true }
+smallvec = "1.8.0"
 
 [dev-dependencies]
 serde_test = "~1.0"
