@@ -67,16 +67,16 @@
 extern crate smallvec;
 
 use std::borrow::Borrow;
-use std::collections::hash_map::{IntoIter, Keys, RandomState};
+use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 use std::fmt::{self, Debug};
 use std::hash::{BuildHasher, Hash};
 use std::iter::{FromIterator, IntoIterator, Iterator};
 use std::ops::Index;
 
+use smallvec::{smallvec, SmallVec};
 pub use std::collections::hash_map::Iter as IterAll;
 pub use std::collections::hash_map::IterMut as IterAllMut;
-use smallvec::{smallvec, SmallVec};
 
 pub use entry::{Entry, OccupiedEntry, VacantEntry};
 
@@ -90,6 +90,24 @@ pub mod serde;
 #[derive(Clone)]
 pub struct MultiMap<K, V, S = RandomState> {
     inner: HashMap<K, smallvec::SmallVec<[V; 8]>, S>,
+}
+
+pub trait MultiMapValue {
+    type Item;
+    fn as_slice(&mut self) -> &mut [Self::Item];
+    fn insert(&mut self, value: Self::Item);
+}
+
+impl<V> MultiMapValue for &mut smallvec::SmallVec<[V; 8]> {
+    type Item = V;
+
+    fn as_slice(&mut self) -> &mut [Self::Item] {
+        self.as_mut_slice()
+    }
+
+    fn insert(&mut self, value: Self::Item) {
+        self.push(value)
+    }
 }
 
 impl<K, V> MultiMap<K, V>
@@ -204,8 +222,7 @@ where
     /// map.insert_many("key", &[42, 43]);
     /// ```
     pub fn insert_many<I: IntoIterator<Item = V>>(&mut self, k: K, v: I) {
-        match self.inner.entry(k)
-        {
+        match self.inner.entry(k) {
             std::collections::hash_map::Entry::Occupied(mut entry) => {
                 entry.get_mut().extend(v);
             }
@@ -233,8 +250,7 @@ where
     where
         V: Copy,
     {
-        match self.inner.entry(k)
-        {
+        match self.inner.entry(k) {
             std::collections::hash_map::Entry::Occupied(mut entry) => {
                 entry.get_mut().extend_from_slice(v);
             }
@@ -398,8 +414,9 @@ where
     /// if let Some(v) = map.get_vec_mut(&1) {
     ///     (*v)[0] = 1991;
     ///     (*v)[1] = 2332;
+    ///     v.push(111)
     /// }
-    /// assert_eq!(map.get_vec(&1), Some(&vec![1991, 2332]));
+    /// assert_eq!(map.get_vec(&1), Some(&vec![1991, 2332][..]));
     /// ```
     pub fn get_vec_mut<Q: ?Sized>(&mut self, k: &Q) -> Option<&mut [V]>
     where
@@ -407,6 +424,14 @@ where
         Q: Eq + Hash,
     {
         self.inner.get_mut(k).map(|i| i.as_mut_slice())
+    }
+
+    pub fn get_all_mut<Q: ?Sized>(&mut self, k: &Q) -> Option<impl MultiMapValue<Item = V> + '_>
+    where
+        K: Borrow<Q>,
+        Q: Eq + Hash,
+    {
+        self.inner.get_mut(k)
     }
 
     /// Returns true if the key is multi-valued.
@@ -527,7 +552,9 @@ where
     /// }
     /// ```
     pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> {
-        self.inner.iter().filter_map(|(k, v)| v.first().map(|f| (k, f)))
+        self.inner
+            .iter()
+            .filter_map(|(k, v)| v.first().map(|f| (k, f)))
     }
 
     /// An iterator visiting all key-value pairs in arbitrary order. The iterator returns
@@ -554,7 +581,9 @@ where
     /// }
     /// ```
     pub fn iter_mut(&mut self) -> impl Iterator<Item = (&K, &mut V)> {
-        self.inner.iter_mut().filter_map(|(k, v)| v.first_mut().map(|f| (k, f)))
+        self.inner
+            .iter_mut()
+            .filter_map(|(k, v)| v.first_mut().map(|f| (k, f)))
     }
 
     /// An iterator visiting all key-value pairs in arbitrary order. The iterator returns
@@ -1078,9 +1107,7 @@ mod tests {
         let mut m: MultiMap<usize, usize> = MultiMap::new();
         m.insert(1, 42);
         m.insert(1, 1337);
-        assert_eq!(
-            Some(&vec![42, 1337][..]),
-            m.get_vec(&1));
+        assert_eq!(Some(&vec![42, 1337][..]), m.get_vec(&1));
     }
 
     #[test]
@@ -1121,6 +1148,20 @@ mod tests {
     }
 
     #[test]
+    fn get_all_mut() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        m.insert(1, 1337);
+        if let Some(mut v) = m.get_all_mut(&1) {
+            v.insert(555);
+            (*v.as_slice())[0] = 5;
+            (*v.as_slice())[1] = 10;
+            (*v.as_slice())[2] = 55;
+        }
+        assert_eq!(Some(&vec![5, 10, 55][..]), m.get_vec(&1));
+    }
+
+    #[test]
     fn get_vec_mut() {
         let mut m: MultiMap<usize, usize> = MultiMap::new();
         m.insert(1, 42);
@@ -1129,9 +1170,7 @@ mod tests {
             (*v)[0] = 5;
             (*v)[1] = 10;
         }
-        assert_eq!(
-            Some(&vec![5, 10][..]),
-            m.get_vec(&1));
+        assert_eq!(Some(&vec![5, 10][..]), m.get_vec(&1));
     }
 
     #[test]
