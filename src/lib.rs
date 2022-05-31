@@ -10,12 +10,12 @@
 //! A map implementation which allows storing multiple values per key.
 //!
 //! The interface is roughly based on std::collections::HashMap, but is changed
-//! and extended to accomodate the multi-value use case. In fact, MultiMap is
+//! and extended to accommodate the multi-value use case. In fact, MultiMap is
 //! implemented mostly as a thin wrapper around std::collections::HashMap and
 //! stores its values as a std::Vec per key.
 //!
 //! Values are guaranteed to be in insertion order as long as not manually
-//! changed. Keys are not ordered. Multiple idential key-value-pairs can exist
+//! changed. Keys are not ordered. Multiple identical key-value-pairs can exist
 //! in the MultiMap. A key can exist in the MultiMap with no associated value.
 //!
 //! # Examples
@@ -146,7 +146,7 @@ where
         }
     }
 
-    /// Creates an empty MultiMap with the given intial capacity and hash builder.
+    /// Creates an empty MultiMap with the given initial capacity and hash builder.
     ///
     /// # Examples
     ///
