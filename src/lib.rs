@@ -277,6 +277,23 @@ where
     pub fn len(&self) -> usize {
         self.inner.len()
     }
+    
+    /// Returns the number of elements in all the vectors of the map.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use multimap::MultiMap;
+    ///
+    /// let mut map = MultiMap::new();
+    /// map.insert(1, 42);
+    /// map.insert(1, 1337);
+    /// map.insert(2, 2332);
+    /// assert_eq!(map.all_len(), 3);
+    /// ```
+    pub fn all_len(&self) -> usize {
+        self.iter_all().fold(0, |acc, (_, values)| acc + values.len())
+    }
 
     /// Removes a key from the map, returning the vector of values at
     /// the key if the key was previously in the map.
