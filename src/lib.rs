@@ -7,14 +7,16 @@
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
 
-//! A MultiMap implementation which is just a wrapper around std::collections::HashMap.
-//! See HashMap's documentation for more details.
+//! A map implementation which allows storing multiple values per key.
 //!
-//! Some of the methods are just thin wrappers, some methods does change a little semantics
-//! and some methods are new (doesn't have an equivalent in HashMap.)
+//! The interface is roughly based on std::collections::HashMap, but is changed
+//! and extended to accomodate the multi-value use case. In fact, MultiMap is
+//! implemented mostly as a thin wrapper around std::collections::HashMap and
+//! stores its values as a std::Vec per key.
 //!
-//! The MultiMap is generic for the key (K) and the value (V). Internally the values are
-//! stored in a generic Vector.
+//! Values are guaranteed to be in insertion order as long as not manually
+//! changed. Keys are not ordered. Multiple idential key-value-pairs can exist
+//! in the MultiMap. A key can exist in the MultiMap with no associated value.
 //!
 //! # Examples
 //!
@@ -345,7 +347,7 @@ where
         K: Borrow<Q>,
         Q: Eq + Hash,
     {
-        self.inner.get(k).map(|v| &v[0])
+        self.inner.get(k)?.get(0)
     }
 
     /// Returns a mutable reference to the first item in the vector corresponding to
@@ -372,7 +374,7 @@ where
         K: Borrow<Q>,
         Q: Eq + Hash,
     {
-        self.inner.get_mut(k).map(|v| v.get_mut(0).unwrap())
+        self.inner.get_mut(k)?.get_mut(0)
     }
 
     /// Returns a reference to the vector corresponding to the key.
@@ -521,12 +523,13 @@ where
     ///
     /// let mut map = MultiMap::new();
     /// map.insert(1,42);
+    /// map.insert(1,1337);
     /// map.insert(2,1337);
     /// map.insert(4,1991);
     ///
-    /// for key in map.keys() {
-    ///     println!("{:?}", key);
-    /// }
+    /// let mut keys: Vec<_> = map.keys().collect();
+    /// keys.sort();
+    /// assert_eq!(keys, [&1, &2, &4]);
     /// ```
     pub fn keys(&'_ self) -> impl Iterator<Item = &K> {
         self.inner.keys()
@@ -547,9 +550,9 @@ where
     /// map.insert(3,2332);
     /// map.insert(4,1991);
     ///
-    /// for (key, value) in map.iter() {
-    ///     println!("key: {:?}, val: {:?}", key, value);
-    /// }
+    /// let mut pairs: Vec<_> = map.iter().collect();
+    /// pairs.sort_by_key(|p| p.0);
+    /// assert_eq!(pairs, [(&1, &42), (&3, &2332), (&4, &1991)]);
     /// ```
     pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> {
         self.inner
@@ -576,9 +579,9 @@ where
     ///     *value *= *value;
     /// }
     ///
-    /// for (key, value) in map.iter() {
-    ///     println!("key: {:?}, val: {:?}", key, value);
-    /// }
+    /// let mut pairs: Vec<_> = map.iter_mut().collect();
+    /// pairs.sort_by_key(|p| p.0);
+    /// assert_eq!(pairs, [(&1, &mut 1764), (&3, &mut 5438224), (&4, &mut 3964081)]);
     /// ```
     pub fn iter_mut(&mut self) -> impl Iterator<Item = (&K, &mut V)> {
         self.inner
@@ -601,9 +604,9 @@ where
     /// map.insert(3,2332);
     /// map.insert(4,1991);
     ///
-    /// for (key, values) in map.iter_all() {
-    ///     println!("key: {:?}, values: {:?}", key, values);
-    /// }
+    /// let mut pairs: Vec<_> = map.iter_all().collect();
+    /// pairs.sort_by_key(|p| p.0);
+    /// assert_eq!(pairs, [(&1, &vec![42, 1337]), (&3, &vec![2332]), (&4, &vec![1991])]);
     /// ```
     pub fn iter_all(&self) -> impl Iterator<Item = (&K, &[V])> {
         self.inner.iter().map(|(k, v)| (k, v.as_slice()))
@@ -630,9 +633,9 @@ where
     ///     }
     /// }
     ///
-    /// for (key, values) in map.iter_all() {
-    ///     println!("key: {:?}, values: {:?}", key, values);
-    /// }
+    /// let mut pairs: Vec<_> = map.iter_all_mut().collect();
+    /// pairs.sort_by_key(|p| p.0);
+    /// assert_eq!(pairs, [(&1, &mut vec![99, 99]), (&3, &mut vec![99]), (&4, &mut vec![99])]);
     /// ```
     pub fn iter_all_mut(&mut self) -> impl Iterator<Item = (&K, &mut [V])> {
         self.inner.iter_mut().map(|(k, v)| (k, v.as_mut_slice()))
@@ -664,7 +667,7 @@ where
     ///     assert_eq!(v, &vec![44]);
     ///     v.push(50);
     /// }
-    /// assert_eq!(m.entry(2).or_insert_vec(vec![666]), &vec![666]);
+    /// assert_eq!(m.entry(2).or_insert_vec(vec![667]), &vec![666]);
     ///
     /// assert_eq!(m.get_vec(&1), Some(&vec![44, 50]));
     /// ```
@@ -995,6 +998,14 @@ mod tests {
     }
 
     #[test]
+    fn insert_identical() {
+        let mut m = MultiMap::new();
+        m.insert(1, 42);
+        m.insert(1, 42);
+        assert_eq!(m.get_vec(&1), Some(&vec![42, 42]));
+    }
+
+    #[test]
     fn insert_many() {
         let mut m: MultiMap<usize, usize> = MultiMap::new();
         m.insert_many(1, vec![3, 4]);
@@ -1007,6 +1018,14 @@ mod tests {
         m.insert(1, 2);
         m.insert_many(1, vec![3, 4]);
         assert_eq!(Some(&vec![2, 3, 4][..]), m.get_vec(&1));
+    }
+
+    #[test]
+    fn insert_many_overlap() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert_many(1, vec![2, 3]);
+        m.insert_many(1, vec![3, 4]);
+        assert_eq!(Some(&vec![2, 3, 3, 4]), m.get_vec(&1));
     }
 
     #[test]
@@ -1029,6 +1048,7 @@ mod tests {
         let mut m: MultiMap<usize, usize> = MultiMap::new();
         m.insert(1, 3);
         m.insert(1, 4);
+        assert_eq!(Some(&vec![3, 4]), m.get_vec(&1));
     }
 
     #[test]
@@ -1094,6 +1114,14 @@ mod tests {
         let mut m: MultiMap<usize, usize> = MultiMap::new();
         m.insert(1, 42);
         assert_eq!(m.get(&1), Some(&42));
+    }
+
+    #[test]
+    fn get_empty() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        m.get_vec_mut(&1).and_then(Vec::pop);
+        assert_eq!(m.get(&1), None);
     }
 
     #[test]
@@ -1171,6 +1199,14 @@ mod tests {
             (*v)[1] = 10;
         }
         assert_eq!(Some(&vec![5, 10][..]), m.get_vec(&1));
+    }
+
+    #[test]
+    fn get_mut_empty() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 42);
+        m.get_vec_mut(&1).and_then(Vec::pop);
+        assert_eq!(m.get_mut(&1), None);
     }
 
     #[test]
@@ -1297,12 +1333,25 @@ mod tests {
         let mut m2 = MultiMap::new();
         m2.insert(1, 2);
         m2.insert(2, 3);
-        assert!(m1 != m2);
+        assert_ne!(m1, m2);
         m2.insert(3, 4);
         assert_eq!(m1, m2);
         m2.insert(3, 4);
-        assert!(m1 != m2);
+        assert_ne!(m1, m2);
         m1.insert(3, 4);
+        assert_eq!(m1, m2);
+    }
+
+    #[test]
+    fn test_eq_empty_key() {
+        let mut m1 = MultiMap::new();
+        m1.insert(1, 2);
+        m1.insert(2, 3);
+        let mut m2 = MultiMap::new();
+        m2.insert(1, 2);
+        m2.insert_many(2, []);
+        assert_ne!(m1, m2);
+        m2.insert_many(2, [3]);
         assert_eq!(m1, m2);
     }
 
