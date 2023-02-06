@@ -67,15 +67,12 @@
 //! ```
 
 use std::borrow::Borrow;
-use std::collections::hash_map::{IntoIter, Keys, RandomState};
+use std::collections::hash_map::{self, Keys, RandomState};
 use std::collections::HashMap;
 use std::fmt::{self, Debug};
 use std::hash::{BuildHasher, Hash};
 use std::iter::{FromIterator, IntoIterator, Iterator};
 use std::ops::Index;
-
-pub use std::collections::hash_map::Iter as IterAll;
-pub use std::collections::hash_map::IterMut as IterAllMut;
 
 pub use entry::{Entry, OccupiedEntry, VacantEntry};
 
@@ -86,7 +83,7 @@ pub mod serde;
 
 #[derive(Clone)]
 pub struct MultiMap<K, V, S = RandomState> {
-    inner: HashMap<K, Vec<V>, S>,
+    inner: HashMap<K, entry::OneOrAny<V>, S>,
 }
 
 impl<K, V> MultiMap<K, V>
@@ -300,7 +297,7 @@ where
         K: Borrow<Q>,
         Q: Eq + Hash,
     {
-        self.inner.remove(k)
+        self.inner.remove(k).map(|v| v.into())
     }
 
     /// Returns a reference to the first item in the vector corresponding to
@@ -401,7 +398,7 @@ where
         K: Borrow<Q>,
         Q: Eq + Hash,
     {
-        self.inner.get_mut(k)
+        self.inner.get_mut(k).map(|v| v.as_mut_vec())
     }
 
     /// Returns true if the key is multi-valued.
@@ -499,7 +496,7 @@ where
     /// keys.sort();
     /// assert_eq!(keys, [&1, &2, &4]);
     /// ```
-    pub fn keys(&'_ self) -> Keys<'_, K, Vec<V>> {
+    pub fn keys(&'_ self) -> Keys<'_, K, entry::OneOrAny<V>> {
         self.inner.keys()
     }
 
@@ -558,8 +555,8 @@ where
     }
 
     /// An iterator visiting all key-value pairs in arbitrary order. The iterator returns
-    /// a reference to the key and the corresponding key's vector.
-    /// Iterator element type is (&'a K, &'a V).
+    /// a reference to the key and the corresponding key's values.
+    /// Iterator element type is `(&'a K, &'a[V])`.
     ///
     /// # Examples
     ///
@@ -574,15 +571,15 @@ where
     ///
     /// let mut pairs: Vec<_> = map.iter_all().collect();
     /// pairs.sort_by_key(|p| p.0);
-    /// assert_eq!(pairs, [(&1, &vec![42, 1337]), (&3, &vec![2332]), (&4, &vec![1991])]);
+    /// assert_eq!(pairs, [(&1, &[42, 1337][..]), (&3, &[2332][..]), (&4, &[1991][..])]);
     /// ```
-    pub fn iter_all(&self) -> IterAll<K, Vec<V>> {
-        self.inner.iter()
+    pub fn iter_all(&self) -> IterAll<K, V> {
+        IterAll { inner: self.inner.iter() }
     }
 
     /// An iterator visiting all key-value pairs in arbitrary order. The iterator returns
-    /// a reference to the key and the corresponding key's vector.
-    /// Iterator element type is (&'a K, &'a V).
+    /// a reference to the key and the corresponding key's values.
+    /// Iterator element type is (&'a K, &'a[V]).
     ///
     /// # Examples
     ///
@@ -596,17 +593,17 @@ where
     /// map.insert(4,1991);
     ///
     /// for (key, values) in map.iter_all_mut() {
-    ///     for value in values.iter_mut() {
+    ///     for value in values {
     ///         *value = 99;
     ///     }
     /// }
     ///
     /// let mut pairs: Vec<_> = map.iter_all_mut().collect();
     /// pairs.sort_by_key(|p| p.0);
-    /// assert_eq!(pairs, [(&1, &mut vec![99, 99]), (&3, &mut vec![99]), (&4, &mut vec![99])]);
+    /// assert_eq!(pairs, [(&1, &mut[99, 99][..]), (&3, &mut[99][..]), (&4, &mut[99][..])]);
     /// ```
-    pub fn iter_all_mut(&mut self) -> IterAllMut<K, Vec<V>> {
-        self.inner.iter_mut()
+    pub fn iter_all_mut(&mut self) -> IterAllMut<K, V> {
+        IterAllMut { inner: self.inner.iter_mut() }
     }
 
     /// Gets the specified key's corresponding entry in the map for in-place manipulation.
@@ -666,8 +663,8 @@ where
     where
         F: FnMut(&K, &V) -> bool,
     {
-        for (key, vector) in &mut self.inner {
-            vector.retain(|value| f(key, value));
+        for (key, values) in &mut self.inner {
+            values.retain(|value| f(key, value));
         }
         self.inner.retain(|_, v| !v.is_empty());
     }
@@ -759,10 +756,10 @@ where
     K: Eq + Hash,
     S: BuildHasher,
 {
-    type Item = (&'a K, &'a Vec<V>);
-    type IntoIter = IterAll<'a, K, Vec<V>>;
+    type Item = (&'a K, &'a [V]);
+    type IntoIter = IterAll<'a, K, V>;
 
-    fn into_iter(self) -> IterAll<'a, K, Vec<V>> {
+    fn into_iter(self) -> IterAll<'a, K, V> {
         self.iter_all()
     }
 }
@@ -772,11 +769,11 @@ where
     K: Eq + Hash,
     S: BuildHasher,
 {
-    type Item = (&'a K, &'a mut Vec<V>);
-    type IntoIter = IterAllMut<'a, K, Vec<V>>;
+    type Item = (&'a K, &'a mut [V]);
+    type IntoIter = IterAllMut<'a, K, V>;
 
-    fn into_iter(self) -> IterAllMut<'a, K, Vec<V>> {
-        self.inner.iter_mut()
+    fn into_iter(self) -> IterAllMut<'a, K, V> {
+        self.iter_all_mut()
     }
 }
 
@@ -786,10 +783,10 @@ where
     S: BuildHasher,
 {
     type Item = (K, Vec<V>);
-    type IntoIter = IntoIter<K, Vec<V>>;
+    type IntoIter = IntoIter<K, V>;
 
-    fn into_iter(self) -> IntoIter<K, Vec<V>> {
-        self.inner.into_iter()
+    fn into_iter(self) -> IntoIter<K, V> {
+        IntoIter { inner: self.inner.into_iter() }
     }
 }
 
@@ -835,13 +832,13 @@ where
     }
 }
 
-impl<'a, K, V, S> Extend<(&'a K, &'a Vec<V>)> for MultiMap<K, V, S>
+impl<'a, K, V, S> Extend<(&'a K, &'a [V])> for MultiMap<K, V, S>
 where
     K: Eq + Hash + Copy,
     V: Copy,
     S: BuildHasher,
 {
-    fn extend<T: IntoIterator<Item = (&'a K, &'a Vec<V>)>>(&mut self, iter: T) {
+    fn extend<T: IntoIterator<Item = (&'a K, &'a [V])>>(&mut self, iter: T) {
         self.extend(
             iter.into_iter()
                 .map(|(&key, values)| (key, values.to_owned())),
@@ -849,9 +846,62 @@ where
     }
 }
 
+/// Iterator over each key and all its values.
+#[derive(Clone)]
+pub struct IterAll<'a, K: 'a, V: 'a> {
+    inner: hash_map::Iter<'a, K, entry::OneOrAny<V>>,
+}
+
+impl<'a, K, V> Iterator for IterAll<'a, K, V> {
+    type Item = (&'a K, &'a [V]);
+
+    fn next(&mut self) -> Option<(&'a K, &'a [V])> {
+        self.inner.next().map(|(k, v)| (k, v.as_slice()))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+}
+
+/// Iterator over each key and all its values.
+pub struct IterAllMut<'a, K: 'a, V: 'a> {
+    inner: hash_map::IterMut<'a, K, entry::OneOrAny<V>>,
+}
+
+impl<'a, K, V> Iterator for IterAllMut<'a, K, V> {
+    type Item = (&'a K, &'a mut [V]);
+
+    fn next(&mut self) -> Option<(&'a K, &'a mut [V])> {
+        self.inner.next().map(|(k, v)| (k, v.as_mut_slice()))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+}
+
+/// Iterator over each key and all its values.
+pub struct IntoIter<K, V> {
+    inner: hash_map::IntoIter<K, entry::OneOrAny<V>>,
+}
+
+impl<K, V> Iterator for IntoIter<K, V> {
+    type Item = (K, Vec<V>);
+
+    fn next(&mut self) -> Option<(K, Vec<V>)> {
+        self.inner.next().map(|(k, v)| (k, v.into()))
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+}
+
+/// Iterator over each key and its first value.
 #[derive(Clone)]
 pub struct Iter<'a, K: 'a, V: 'a> {
-    inner: IterAll<'a, K, Vec<V>>,
+    inner: hash_map::Iter<'a, K, entry::OneOrAny<V>>,
 }
 
 impl<'a, K, V> Iterator for Iter<'a, K, V> {
@@ -872,8 +922,9 @@ impl<'a, K, V> ExactSizeIterator for Iter<'a, K, V> {
     }
 }
 
+/// Iterator over each key and its first value.
 pub struct IterMut<'a, K: 'a, V: 'a> {
-    inner: IterAllMut<'a, K, Vec<V>>,
+    inner: hash_map::IterMut<'a, K, entry::OneOrAny<V>>,
 }
 
 impl<'a, K, V> Iterator for IterMut<'a, K, V> {
@@ -1222,14 +1273,14 @@ mod tests {
             assert!(keys.contains(key));
 
             if key == &1 {
-                assert_eq!(value, &vec![42, 43]);
-                value.push(666);
+                assert_eq!(value, &[42, 43][..]);
+                value[1] = 666;
             } else {
                 assert_eq!(value, &vec![42]);
             }
         }
 
-        assert_eq!(m.get_slice(&1), Some(&[42, 43, 666][..]));
+        assert_eq!(m.get_slice(&1), Some(&[42, 666][..]));
     }
 
     #[test]

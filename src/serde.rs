@@ -18,6 +18,31 @@ use self::serde::de::{MapAccess, Visitor};
 use self::serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use MultiMap;
+use entry::OneOrAny;
+
+impl<T> Serialize for OneOrAny<T>
+where
+    T: Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.as_slice().serialize(serializer)
+    }
+}
+
+impl<'de, T> Deserialize<'de> for OneOrAny<T>
+where
+    T: Deserialize<'de>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Vec::<T>::deserialize(deserializer).map(OneOrAny::Any)
+    }
+}
 
 impl<K, V, BS> Serialize for MultiMap<K, V, BS>
 where
