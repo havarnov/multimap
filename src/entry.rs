@@ -37,7 +37,7 @@ impl<'a, K: 'a, V: 'a> OccupiedEntry<'a, K, V> {
     }
 
     /// Gets a reference to the values (vector) corresponding to entry.
-    pub fn get_vec(&self) -> &Vec<V> {
+    pub fn get_slice(&self) -> &[V] {
         self.inner.get()
     }
 
