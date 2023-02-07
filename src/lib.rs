@@ -629,7 +629,8 @@ where
     /// }
     /// ```
     pub fn flat_iter(&self) -> impl Iterator<Item = (&K, &V)> {
-        self.iter_all().flat_map(|(k, v)| v.into_iter().map(move |i| (k, i)))
+        self.iter_all()
+            .flat_map(|(k, v)| v.into_iter().map(move |i| (k, i)))
     }
 
     /// An iterator visiting all key-value pairs in arbitrary order. The iterator returns
@@ -652,7 +653,8 @@ where
     /// }
     /// ```
     pub fn flat_iter_mut(&mut self) -> impl Iterator<Item = (&K, &mut V)> {
-        self.iter_all_mut().flat_map(|(k, v)| v.into_iter().map(move |i| (k, i)))
+        self.iter_all_mut()
+            .flat_map(|(k, v)| v.into_iter().map(move |i| (k, i)))
     }
 
     /// Gets the specified key's corresponding entry in the map for in-place manipulation.
@@ -904,7 +906,9 @@ impl<'a, K, V> Iterator for Iter<'a, K, V> {
     type Item = (&'a K, &'a V);
 
     fn next(&mut self) -> Option<(&'a K, &'a V)> {
-        self.inner.next().map(|(k, v)| (k, &v[0]))
+        let (k, v) = self.inner.next()?;
+        let v = v.first()?;
+        Some((k, v))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -926,7 +930,9 @@ impl<'a, K, V> Iterator for IterMut<'a, K, V> {
     type Item = (&'a K, &'a mut V);
 
     fn next(&mut self) -> Option<(&'a K, &'a mut V)> {
-        self.inner.next().map(|(k, v)| (k, &mut v[0]))
+        let (k, v) = self.inner.next()?;
+        let v = v.first_mut()?;
+        Some((k, v))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -1226,11 +1232,22 @@ mod tests {
         m.insert(4, 42);
         m.insert(8, 42);
 
+        assert!(m.iter().all(|(_, &v)| v == 42));
+
         let mut iter = m.iter();
 
         for _ in iter.by_ref().take(2) {}
 
         assert_eq!(iter.len(), 1);
+    }
+
+    #[test]
+    fn iter_empty_vec() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(42, 42);
+        m.get_vec_mut(&42).unwrap().clear();
+
+        assert!(m.iter().next().is_none());
     }
 
     #[test]
