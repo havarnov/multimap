@@ -732,8 +732,9 @@ where
     fn index(&self, index: &Q) -> &V {
         self.inner
             .get(index)
-            .map(|v| &v[0])
             .expect("no entry found for key")
+            .first()
+            .expect("no value found for key")
     }
 }
 
@@ -1065,7 +1066,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "no entry found for key")]
     fn index_no_entry() {
         let m: MultiMap<usize, usize> = MultiMap::new();
         let _ = &m[&1];
@@ -1074,7 +1075,19 @@ mod tests {
     #[test]
     fn index() {
         let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 41);
+        m.insert(2, 42);
+        m.insert(3, 43);
+        let values = m[&2];
+        assert_eq!(values, 42);
+    }
+
+    #[test]
+    #[should_panic(expected = "no value found for key")]
+    fn index_empty_vec() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
         m.insert(1, 42);
+        m.get_vec_mut(&1).unwrap().clear();
         let values = m[&1];
         assert_eq!(values, 42);
     }
