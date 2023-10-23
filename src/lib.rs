@@ -732,8 +732,9 @@ where
     fn index(&self, index: &Q) -> &V {
         self.inner
             .get(index)
-            .map(|v| &v[0])
             .expect("no entry found for key")
+            .first()
+            .expect("no value found for key")
     }
 }
 
@@ -906,7 +907,9 @@ impl<'a, K, V> Iterator for Iter<'a, K, V> {
     type Item = (&'a K, &'a V);
 
     fn next(&mut self) -> Option<(&'a K, &'a V)> {
-        self.inner.next().map(|(k, v)| (k, &v[0]))
+        let (k, v) = self.inner.next()?;
+        let v = v.first()?;
+        Some((k, v))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -928,7 +931,9 @@ impl<'a, K, V> Iterator for IterMut<'a, K, V> {
     type Item = (&'a K, &'a mut V);
 
     fn next(&mut self) -> Option<(&'a K, &'a mut V)> {
-        self.inner.next().map(|(k, v)| (k, &mut v[0]))
+        let (k, v) = self.inner.next()?;
+        let v = v.first_mut()?;
+        Some((k, v))
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
@@ -1061,7 +1066,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "no entry found for key")]
     fn index_no_entry() {
         let m: MultiMap<usize, usize> = MultiMap::new();
         let _ = &m[&1];
@@ -1070,7 +1075,19 @@ mod tests {
     #[test]
     fn index() {
         let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(1, 41);
+        m.insert(2, 42);
+        m.insert(3, 43);
+        let values = m[&2];
+        assert_eq!(values, 42);
+    }
+
+    #[test]
+    #[should_panic(expected = "no value found for key")]
+    fn index_empty_vec() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
         m.insert(1, 42);
+        m.get_vec_mut(&1).unwrap().clear();
         let values = m[&1];
         assert_eq!(values, 42);
     }
@@ -1228,11 +1245,22 @@ mod tests {
         m.insert(4, 42);
         m.insert(8, 42);
 
+        assert!(m.iter().all(|(_, &v)| v == 42));
+
         let mut iter = m.iter();
 
         for _ in iter.by_ref().take(2) {}
 
         assert_eq!(iter.len(), 1);
+    }
+
+    #[test]
+    fn iter_empty_vec() {
+        let mut m: MultiMap<usize, usize> = MultiMap::new();
+        m.insert(42, 42);
+        m.get_vec_mut(&42).unwrap().clear();
+
+        assert!(m.iter().next().is_none());
     }
 
     #[test]
