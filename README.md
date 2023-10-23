@@ -28,6 +28,10 @@ fn main () {
 
 ## Changelog
 
+### 0.9.1
+
+* Fixes a bug where iteration would panic on empty (inner) vectors [#46](https://github.com/havarnov/multimap/issues/46).
+
 ### 0.9.0
 
 * Added ```flat_iter``` and ```flat_iter_mut```
