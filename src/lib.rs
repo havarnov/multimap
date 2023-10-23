@@ -630,7 +630,7 @@ where
     /// ```
     pub fn flat_iter(&self) -> impl Iterator<Item = (&K, &V)> {
         self.iter_all()
-            .flat_map(|(k, v)| v.into_iter().map(move |i| (k, i)))
+            .flat_map(|(k, v)| v.iter().map(move |i| (k, i)))
     }
 
     /// An iterator visiting all key-value pairs in arbitrary order. The iterator returns
@@ -654,7 +654,7 @@ where
     /// ```
     pub fn flat_iter_mut(&mut self) -> impl Iterator<Item = (&K, &mut V)> {
         self.iter_all_mut()
-            .flat_map(|(k, v)| v.into_iter().map(move |i| (k, i)))
+            .flat_map(|(k, v)| v.iter_mut().map(move |i| (k, i)))
     }
 
     /// Gets the specified key's corresponding entry in the map for in-place manipulation.

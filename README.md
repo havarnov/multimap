@@ -28,6 +28,11 @@ fn main () {
 
 ## Changelog
 
+### 0.9.0
+
+* Added ```flat_iter``` and ```flat_iter_mut```
+* Fixed bug where ```get``` and ```get_mut``` could panic.
+
 ### 0.8.3
 
 * `multimap!` macro fixes; allow trailing comma, naming hygiene and create with

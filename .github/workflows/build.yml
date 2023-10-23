@@ -22,13 +22,13 @@ jobs:
         with:
           command: test
 
-      - name: run rustfmt 
+      - name: cargo fmt
         uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all -- --check
 
-      - name: run clippy
+      - name: cargo clippy 
         uses: actions-rs/cargo@v1
         with:
           command: clippy
