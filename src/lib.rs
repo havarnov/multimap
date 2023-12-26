@@ -803,6 +803,25 @@ where
     }
 }
 
+impl<K, V, S> FromIterator<(K, Vec<V>)> for MultiMap<K, V, S>
+where
+    K: Eq + Hash,
+    V: Clone,
+    S: BuildHasher + Default,
+{
+    fn from_iter<T: IntoIterator<Item = (K, Vec<V>)>>(iterable: T) -> MultiMap<K, V, S> {
+        let iter = iterable.into_iter();
+        let hint = iter.size_hint().0;
+
+        let mut multimap = MultiMap::with_capacity_and_hasher(hint, S::default());
+        for (k, v) in iter {
+            multimap.insert_many_from_slice(k, &v[..])
+        }
+
+        multimap
+    }
+}
+
 impl<'a, K, V, S> IntoIterator for &'a MultiMap<K, V, S>
 where
     K: Eq + Hash,
@@ -1441,6 +1460,27 @@ mod tests {
         let bar_vals: &Vec<i64> = multimap.get_vec("bar").unwrap();
         assert!(bar_vals.contains(&456));
     }
+
+    #[test]
+    fn test_from_vec_iterator() {
+        let vals: Vec<(&str, Vec<i64>)> = vec![("foo", vec![123, 456]), ("bar", vec![234]), ("foobar", vec![567, 678, 789]), ("bar", vec![12, 23, 34])];
+        let multimap: MultiMap<&str, i64> = MultiMap::from_iter(vals);
+
+        let foo_vals: &Vec<i64> = multimap.get_vec("foo").unwrap();
+        assert!(foo_vals.contains(&123));
+        assert!(foo_vals.contains(&456));
+
+        let bar_vals: &Vec<i64> = multimap.get_vec("bar").unwrap();
+        assert!(bar_vals.contains(&234));
+        assert!(bar_vals.contains(&12));
+        assert!(bar_vals.contains(&23));
+        assert!(bar_vals.contains(&34));
+
+        let bar_vals: &Vec<i64> = multimap.get_vec("foobar").unwrap();
+        assert!(bar_vals.contains(&567));
+        assert!(bar_vals.contains(&678));
+        assert!(bar_vals.contains(&789));
+    }    
 
     #[test]
     fn test_extend_consuming_hashmap() {
