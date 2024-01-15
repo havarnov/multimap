@@ -28,6 +28,10 @@ fn main () {
 
 ## Changelog
 
+### 0.10.0
+
+* Added `FromIterator<(K, Vec<V>)>` [#48](https://github.com/havarnov/multimap/pull/48).
+
 ### 0.9.1
 
 * Fixes a bug where iteration would panic on empty (inner) vectors [#46](https://github.com/havarnov/multimap/issues/46).
