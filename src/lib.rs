@@ -1463,7 +1463,13 @@ mod tests {
 
     #[test]
     fn test_from_vec_iterator() {
-        let vals: Vec<(&str, Vec<i64>)> = vec![("foo", vec![123, 456]), ("bar", vec![234]), ("foobar", vec![567, 678, 789]), ("bar", vec![12, 23, 34])];
+        let vals: Vec<(&str, Vec<i64>)> = vec![
+            ("foo", vec![123, 456]),
+            ("bar", vec![234]),
+            ("foobar", vec![567, 678, 789]),
+            ("bar", vec![12, 23, 34]),
+        ];
+
         let multimap: MultiMap<&str, i64> = MultiMap::from_iter(vals);
 
         let foo_vals: &Vec<i64> = multimap.get_vec("foo").unwrap();
@@ -1476,11 +1482,11 @@ mod tests {
         assert!(bar_vals.contains(&23));
         assert!(bar_vals.contains(&34));
 
-        let bar_vals: &Vec<i64> = multimap.get_vec("foobar").unwrap();
-        assert!(bar_vals.contains(&567));
-        assert!(bar_vals.contains(&678));
-        assert!(bar_vals.contains(&789));
-    }    
+        let foobar_vals: &Vec<i64> = multimap.get_vec("foobar").unwrap();
+        assert!(foobar_vals.contains(&567));
+        assert!(foobar_vals.contains(&678));
+        assert!(foobar_vals.contains(&789));
+    }
 
     #[test]
     fn test_extend_consuming_hashmap() {
