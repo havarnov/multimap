@@ -504,9 +504,15 @@ where
         self.inner.keys()
     }
 
-    /// An iterator visiting all key-value pairs in arbitrary order. The iterator returns
+    /// An iterator visiting pairs of each key and its first value in arbitrary order.
+    /// The iterator returns
     /// a reference to the key and the first element in the corresponding key's vector.
     /// Iterator element type is (&'a K, &'a V).
+    ///
+    /// See [`flat_iter`](Self::flat_iter)
+    /// for visiting all key-value pairs,
+    /// or [`iter_all`](Self::iter_all)
+    /// for visiting each key and its vector of values.
     ///
     /// # Examples
     ///
@@ -529,9 +535,15 @@ where
         }
     }
 
-    /// An iterator visiting all key-value pairs in arbitrary order. The iterator returns
+    /// A mutable iterator visiting pairs of each key and its first value
+    /// in arbitrary order. The iterator returns
     /// a reference to the key and a mutable reference to the first element in the
     /// corresponding key's vector. Iterator element type is (&'a K, &'a mut V).
+    ///
+    /// See [`flat_iter_mut`](Self::flat_iter_mut)
+    /// for visiting all key-value pairs,
+    /// or [`iter_all_mut`](Self::iter_all_mut)
+    /// for visiting each key and its vector of values.
     ///
     /// # Examples
     ///
@@ -610,9 +622,7 @@ where
         self.inner.iter_mut()
     }
 
-    /// An iterator visiting all key-value pairs in arbitrary order. The iterator returns
-    /// a reference to the key and the first element in the corresponding key's vector.
-    /// Iterator element type is (&'a K, &'a V).
+    /// An iterator visiting all key-value pairs in arbitrary order.
     ///
     /// # Examples
     ///
@@ -625,18 +635,16 @@ where
     /// map.insert(3,2332);
     /// map.insert(4,1991);
     ///
-    /// for (key, value) in map.flat_iter() {
-    ///     println!("key: {:?}, val: {:?}", key, value);
-    /// }
+    /// let mut pairs: Vec<_> = map.flat_iter().collect();
+    /// pairs.sort();
+    /// assert_eq!(pairs, [(&1, &42), (&1, &1337), (&3, &2332), (&4, &1991)]);
     /// ```
     pub fn flat_iter(&self) -> impl Iterator<Item = (&K, &V)> {
         self.iter_all()
             .flat_map(|(k, v)| v.iter().map(move |i| (k, i)))
     }
 
-    /// An iterator visiting all key-value pairs in arbitrary order. The iterator returns
-    /// a reference to the key and the first element in the corresponding key's vector.
-    /// Iterator element type is (&'a K, &'a V).
+    /// A mutable iterator visiting all key-value pairs in arbitrary order.
     ///
     /// # Examples
     ///
@@ -650,8 +658,12 @@ where
     /// map.insert(4,1991);
     ///
     /// for (key, value) in map.flat_iter_mut() {
-    ///     println!("key: {:?}, val: {:?}", key, value);
+    ///     *value *= key;
     /// }
+    ///
+    /// let mut pairs: Vec<_> = map.flat_iter().collect();
+    /// pairs.sort();
+    /// assert_eq!(pairs, [(&1, &42), (&1, &1337), (&3, &6996), (&4, &7964)]);
     /// ```
     pub fn flat_iter_mut(&mut self) -> impl Iterator<Item = (&K, &mut V)> {
         self.iter_all_mut()
