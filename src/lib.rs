@@ -262,7 +262,7 @@ where
         self.inner.contains_key(k)
     }
 
-    /// Returns the number of elements in the map.
+    /// Returns the number of unique keys in the map.
     ///
     /// # Examples
     ///
@@ -272,6 +272,7 @@ where
     /// let mut map = MultiMap::new();
     /// map.insert(1, 42);
     /// map.insert(2, 1337);
+    /// map.insert(2, 31337);
     /// assert_eq!(map.len(), 2);
     /// ```
     pub fn len(&self) -> usize {
