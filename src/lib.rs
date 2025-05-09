@@ -324,7 +324,7 @@ where
         K: Borrow<Q>,
         Q: Eq + Hash + ?Sized,
     {
-        self.inner.get(k)?.get(0)
+        self.inner.get(k)?.first()
     }
 
     /// Returns a mutable reference to the first item in the vector corresponding to
@@ -761,7 +761,7 @@ where
         }
 
         self.iter_all()
-            .all(|(key, value)| other.get_vec(key).map_or(false, |v| *value == *v))
+            .all(|(key, value)| other.get_vec(key).is_some_and(|v| *value == *v))
     }
 }
 
