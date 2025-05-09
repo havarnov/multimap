@@ -1290,7 +1290,7 @@ mod tests {
         m.insert(4, 42);
         m.insert(8, 42);
 
-        let keys = vec![1, 4, 8];
+        let keys = [1, 4, 8];
 
         for (key, value) in m.flat_iter() {
             assert!(keys.contains(key));
@@ -1311,7 +1311,7 @@ mod tests {
         m.insert(4, 42);
         m.insert(8, 42);
 
-        let keys = vec![1, 4, 8];
+        let keys = [1, 4, 8];
 
         for (key, value) in m.flat_iter_mut() {
             assert!(keys.contains(key));
@@ -1338,7 +1338,7 @@ mod tests {
         m.insert(4, 42);
         m.insert(8, 42);
 
-        let keys = vec![1, 4, 8];
+        let keys = [1, 4, 8];
 
         for (key, value) in &m {
             assert!(keys.contains(key));
@@ -1359,7 +1359,7 @@ mod tests {
         m.insert(4, 42);
         m.insert(8, 42);
 
-        let keys = vec![1, 4, 8];
+        let keys = [1, 4, 8];
 
         for (key, value) in &mut m {
             assert!(keys.contains(key));
@@ -1383,7 +1383,7 @@ mod tests {
         m.insert(4, 42);
         m.insert(8, 42);
 
-        let keys = vec![1, 4, 8];
+        let keys = [1, 4, 8];
 
         for (key, value) in m {
             assert!(keys.contains(&key));
